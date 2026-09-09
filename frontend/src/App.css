@@ -1,12 +1,11 @@
 * {
-  margin: 0;
-  padding: 0;
   box-sizing: border-box;
 }
 
 body {
+  margin: 0;
   font-family: Arial, sans-serif;
-  background-color: #f4f4f4;
+  background: #f4f6f8;
 }
 
 .sistema {
@@ -17,15 +16,15 @@ body {
 /* MENU */
 
 .menu {
-  width: 250px;
-  background-color: #1f2937;
+  width: 240px;
+  background: #111827;
   color: white;
-  padding: 25px;
+  padding: 25px 15px;
 }
 
 .titulo {
-  font-size: 24px;
-  margin-bottom: 40px;
+  font-size: 21px;
+  margin-bottom: 35px;
 }
 
 .navegacao {
@@ -38,30 +37,143 @@ body {
   border: none;
   background: transparent;
   color: white;
-  padding: 12px;
   text-align: left;
-  font-size: 16px;
-  cursor: pointer;
+  padding: 13px;
   border-radius: 8px;
+  cursor: pointer;
+  font-size: 15px;
 }
 
 .botao-menu:hover {
-  background-color: #374151;
+  background: #1f2937;
 }
+
 
 /* CONTEÚDO */
 
 .conteudo {
   flex: 1;
-  padding: 40px;
+  padding: 35px;
 }
 
-.titulo-pagina {
-  font-size: 32px;
-  margin-bottom: 10px;
+
+/* DASHBOARD */
+
+.dashboard {
+  width: 100%;
 }
 
-.descricao {
-  color: #666;
-  font-size: 18px;
+.cabecalho-dashboard h2 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.cabecalho-dashboard p {
+  color: #6b7280;
+  margin-top: 8px;
+}
+
+
+/* CARDS */
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  margin-top: 30px;
+}
+
+.card {
+  background: white;
+  padding: 22px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.card span {
+  font-size: 25px;
+}
+
+.card h3 {
+  margin: 15px 0 5px;
+}
+
+.card strong {
+  font-size: 30px;
+}
+
+.card p {
+  color: #6b7280;
+  margin-bottom: 0;
+}
+
+
+/* RELATÓRIOS */
+
+.area-relatorios {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 25px;
+}
+
+.painel {
+  background: white;
+  padding: 22px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.painel h3 {
+  margin-top: 0;
+}
+
+
+/* RANKING */
+
+.linha-ranking {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 14px 0;
+  border-bottom: 1px solid #eee;
+}
+
+.linha-ranking span {
+  font-weight: bold;
+  width: 30px;
+}
+
+.linha-ranking strong {
+  flex: 1;
+}
+
+.linha-ranking small {
+  color: #6b7280;
+}
+
+
+/* STATUS */
+
+.painel-status {
+  margin-top: 25px;
+}
+
+.status-container {
+  display: flex;
+  gap: 60px;
+}
+
+.status-container div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.status-container strong {
+  font-size: 28px;
+}
+
+.status-container span {
+  color: #6b7280;
 }

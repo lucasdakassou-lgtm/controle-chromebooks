@@ -6,7 +6,8 @@ const pool = require('./database/database');
 const professorRoutes = require('./routes/professorRoutes');
 const turmaRoutes = require('./routes/turmaRoutes');
 const emprestimoRoutes = require('./routes/emprestimoRoutes');
-
+const ocorrenciasRoutes = require('./routes/ocorrenciasRoutes');
+const relatorioRoutes = require('./routes/relatorioRoutes');
 // middlewares 
 const loggerMiddleware = require('./middlewares/loggerMiddleware');
 const notFoundMiddleware = require('./middlewares/notFoundMiddleware');
@@ -21,6 +22,8 @@ app.use(loggerMiddleware);
 app.use('/professores', professorRoutes);
 app.use('/turmas', turmaRoutes);
 app.use('/emprestimos', emprestimoRoutes);
+app.use('/ocorrencias', ocorrenciasRoutes);
+app.use('/relatorios', relatorioRoutes);
 
 app.get('/', (req, res) => {
 

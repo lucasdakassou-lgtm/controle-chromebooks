@@ -1,14 +1,17 @@
 import "./App.css"
+import Dashboard from "./pages/Dashboard"
 
 function App() {
+
   return (
     <div className="sistema">
 
-      {/* Menu lateral */}
+      {/* MENU LATERAL */}
+
       <aside className="menu">
 
         <h1 className="titulo">
-          💻 Chromebooks
+          💻 SistemaProati
         </h1>
 
         <nav className="navegacao">
@@ -29,21 +32,28 @@ function App() {
             👨‍🏫 Professores
           </button>
 
+          <button className="botao-menu">
+            🏫 Turmas
+          </button>
+
+          <button className="botao-menu">
+            ⚠️ Ocorrências
+          </button>
+
+          <button className="botao-menu">
+            📊 Relatórios
+          </button>
+
         </nav>
 
       </aside>
 
 
-      {/* Conteúdo */}
+      {/* CONTEÚDO */}
+
       <main className="conteudo">
 
-        <h2 className="titulo-pagina">
-          Dashboard
-        </h2>
-
-        <p className="descricao">
-          Controle dos Chromebooks da escola
-        </p>
+        <Dashboard />
 
       </main>
 
