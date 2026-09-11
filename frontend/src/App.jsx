@@ -1,64 +1,37 @@
-import "./App.css"
-import Dashboard from "./pages/Dashboard"
-
+import { useEffect, useState } from "react"
+import Menu from "./components/Menu/Menu"
+import Dashboard from "./pages/Dashboard/Dashboard"
 function App() {
+    const [modoEscuro, setModoEscuro] = useState(() => {
+        return localStorage.getItem("modo") === "escuro"
+    })
 
-  return (
-    <div className="sistema">
+    useEffect(() => {
+        if (modoEscuro) {
+            document.body.classList.add("modo-escuro")
+            localStorage.setItem("modo", "escuro")
+        } else {
+            document.body.classList.remove("modo-escuro")
+            localStorage.setItem("modo", "claro")
+        }
+    }, [modoEscuro])
 
-      {/* MENU LATERAL */}
+    function mudarTema() {
+        setModoEscuro((temaAtual) => !temaAtual)
+    }
 
-      <aside className="menu">
+    return (
+        <div className="sistema">
+            <Menu
+                modoEscuro={modoEscuro}
+                mudarTema={mudarTema}
+            />
 
-        <h1 className="titulo">
-          💻 SistemaProati
-        </h1>
-
-        <nav className="navegacao">
-
-          <button className="botao-menu">
-            🏠 Dashboard
-          </button>
-
-          <button className="botao-menu">
-            💻 Empréstimos
-          </button>
-
-          <button className="botao-menu">
-            📅 Agendamentos
-          </button>
-
-          <button className="botao-menu">
-            👨‍🏫 Professores
-          </button>
-
-          <button className="botao-menu">
-            🏫 Turmas
-          </button>
-
-          <button className="botao-menu">
-            ⚠️ Ocorrências
-          </button>
-
-          <button className="botao-menu">
-            📊 Relatórios
-          </button>
-
-        </nav>
-
-      </aside>
-
-
-      {/* CONTEÚDO */}
-
-      <main className="conteudo">
-
-        <Dashboard />
-
-      </main>
-
-    </div>
-  )
+         <main className="conteudo">
+    <Dashboard />
+</main>
+        </div>
+    )
 }
 
 export default App

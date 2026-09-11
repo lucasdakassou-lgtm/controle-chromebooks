@@ -1,0 +1,94 @@
+.menu {
+    width: 250px;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    background: var(--branco);
+    border-right: 1px solid var(--borda);
+
+    padding: 24px 16px;
+}
+
+.menu-titulo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    color: var(--preto);
+    font-size: 18px;
+    font-weight: 700;
+
+    padding: 0 12px;
+    margin-bottom: 35px;
+}
+
+.menu-navegacao {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.menu-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 12px;
+    border-radius: 8px;
+
+    color: var(--cinza);
+    text-decoration: none;
+
+    transition: 0.2s;
+}
+
+.menu-link:hover {
+    background: var(--fundo);
+    color: var(--preto);
+}
+
+.menu-link-ativo {
+    background: var(--roxo);
+    color: white;
+}
+
+.menu-link-ativo:hover {
+    background: var(--roxo);
+    color: white;
+}
+
+.menu-final {
+    margin-top: auto;
+    border-top: 1px solid var(--borda);
+    padding-top: 16px;
+}
+
+.menu-tema {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 12px;
+
+    border: none;
+    border-radius: 8px;
+
+    background: transparent;
+    color: var(--cinza);
+
+    text-align: left;
+
+    transition: 0.2s;
+}
+
+.menu-tema:hover {
+    background: var(--fundo);
+    color: var(--preto);
+}

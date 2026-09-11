@@ -1,6 +1,6 @@
 const pool = require('../database/database');
 
-const TOTAL_CHROMEBOOKS = 45;
+const TOTAL_CHROMEBOOKS = 47;
 
 
 // ==========================================
