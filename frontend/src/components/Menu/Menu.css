@@ -1,9 +1,9 @@
 .menu {
-    width: 250px;
-    height: 100vh;
     position: fixed;
-    left: 0;
     top: 0;
+    left: 0;
+
+    height: 100vh;
 
     display: flex;
     flex-direction: column;
@@ -11,40 +11,110 @@
     background: var(--branco);
     border-right: 1px solid var(--borda);
 
-    padding: 24px 16px;
+    padding: 12px;
+
+    z-index: 100;
+
+    transition: width 0.25s ease;
 }
 
-.menu-titulo {
+.menu-aberto {
+    width: 250px;
+}
+
+.menu-fechado {
+    width: 72px;
+}
+
+.menu-cabecalho {
+    height: 62px;
+
     display: flex;
     align-items: center;
-    gap: 10px;
+
+    border-bottom: 1px solid var(--borda);
+
+    margin-bottom: 20px;
+}
+
+.menu-marca {
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    padding: 8px;
+}
+
+.menu-logo {
+    width: 40px;
+    height: 40px;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    border-radius: 9px;
+
+    background: linear-gradient(
+        135deg,
+        var(--azul),
+        var(--roxo)
+    );
+
+    color: white;
+}
+
+.menu-marca strong {
+    display: block;
 
     color: var(--preto);
-    font-size: 18px;
-    font-weight: 700;
+    font-size: 14px;
+}
 
-    padding: 0 12px;
-    margin-bottom: 35px;
+.menu-marca span {
+    display: block;
+
+    margin-top: 3px;
+
+    color: var(--cinza);
+    font-size: 11px;
 }
 
 .menu-navegacao {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
 }
 
 .menu-link {
+    height: 44px;
+
     display: flex;
     align-items: center;
-    gap: 12px;
 
-    padding: 12px;
     border-radius: 8px;
 
     color: var(--cinza);
     text-decoration: none;
 
     transition: 0.2s;
+}
+
+.menu-link svg {
+    flex-shrink: 0;
+}
+
+.menu-aberto .menu-link {
+    gap: 12px;
+    padding: 0 12px;
+}
+
+.menu-fechado .menu-link {
+    justify-content: center;
 }
 
 .menu-link:hover {
@@ -64,18 +134,22 @@
 
 .menu-final {
     margin-top: auto;
+
+    padding-top: 12px;
+
     border-top: 1px solid var(--borda);
-    padding-top: 16px;
+
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
 }
 
-.menu-tema {
-    width: 100%;
+.menu-tema,
+.menu-recolher {
+    height: 44px;
 
     display: flex;
     align-items: center;
-    gap: 12px;
-
-    padding: 12px;
 
     border: none;
     border-radius: 8px;
@@ -83,12 +157,38 @@
     background: transparent;
     color: var(--cinza);
 
-    text-align: left;
-
     transition: 0.2s;
 }
 
-.menu-tema:hover {
+.menu-aberto .menu-tema,
+.menu-aberto .menu-recolher {
+    gap: 12px;
+    padding: 0 12px;
+}
+
+.menu-fechado .menu-tema,
+.menu-fechado .menu-recolher {
+    justify-content: center;
+}
+
+.menu-tema {
+    width: 100%;
+}
+
+.menu-recolher {
+    width: 100%;
+}
+
+.menu-tema:hover,
+.menu-recolher:hover {
     background: var(--fundo);
     color: var(--preto);
+}
+
+.menu-seta-aberta {
+    transform: rotate(180deg);
+}
+
+.menu-recolher svg {
+    transition: transform 0.25s ease;
 }

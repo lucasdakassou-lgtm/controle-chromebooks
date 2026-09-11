@@ -32,7 +32,15 @@ button {
 }
 
 .conteudo {
-    margin-left: 250px;
     min-height: 100vh;
     padding: 32px;
+    transition: margin-left 0.25s ease;
+}
+
+.conteudo-menu-aberto {
+    margin-left: 250px;
+}
+
+.conteudo-menu-fechado {
+    margin-left: 72px;
 }

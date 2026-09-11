@@ -7,55 +7,91 @@ import {
     AlertTriangle,
     BarChart3,
     Sun,
-    Moon
+    Moon,
+    ChevronsRight
 } from "lucide-react"
 
 import "./Menu.css"
 
-function Menu({ modoEscuro, mudarTema }) {
-    return (
-        <aside className="menu">
+function Menu({ modoEscuro, mudarTema, aberto, mudarMenu }) {
+   
 
-            <div className="menu-titulo">
-                <Laptop size={24} />
-                <span>SistemaProati</span>
+    return (
+        <aside className={`menu ${aberto ? "menu-aberto" : "menu-fechado"}`}>
+
+            <div className="menu-cabecalho">
+
+                <div className="menu-marca">
+                    <div className="menu-logo">
+                        <Laptop size={21} />
+                    </div>
+
+                    {aberto && (
+                        <div>
+                            <strong>SistemaProati</strong>
+                            <span>Gestão escolar</span>
+                        </div>
+                    )}
+                </div>
+
             </div>
 
             <nav className="menu-navegacao">
 
                 <a href="#" className="menu-link menu-link-ativo">
                     <LayoutDashboard size={20} />
-                    <span>Dashboard</span>
+
+                    {aberto && (
+                        <span>Dashboard</span>
+                    )}
                 </a>
 
                 <a href="#" className="menu-link">
                     <Laptop size={20} />
-                    <span>Empréstimos</span>
+
+                    {aberto && (
+                        <span>Empréstimos</span>
+                    )}
                 </a>
 
                 <a href="#" className="menu-link">
                     <CalendarDays size={20} />
-                    <span>Agendamentos</span>
+
+                    {aberto && (
+                        <span>Agendamentos</span>
+                    )}
                 </a>
 
                 <a href="#" className="menu-link">
                     <Users size={20} />
-                    <span>Professores</span>
+
+                    {aberto && (
+                        <span>Professores</span>
+                    )}
                 </a>
 
                 <a href="#" className="menu-link">
                     <GraduationCap size={20} />
-                    <span>Turmas</span>
+
+                    {aberto && (
+                        <span>Turmas</span>
+                    )}
                 </a>
 
                 <a href="#" className="menu-link">
                     <AlertTriangle size={20} />
-                    <span>Ocorrências</span>
+
+                    {aberto && (
+                        <span>Ocorrências</span>
+                    )}
                 </a>
 
                 <a href="#" className="menu-link">
                     <BarChart3 size={20} />
-                    <span>Relatórios</span>
+
+                    {aberto && (
+                        <span>Relatórios</span>
+                    )}
                 </a>
 
             </nav>
@@ -64,20 +100,34 @@ function Menu({ modoEscuro, mudarTema }) {
 
                 <button
                     className="menu-tema"
-                    onClick={mudarTema}
+                    onClick={mudarMenu}
+                    title={aberto ? "" : "Alterar tema"}
                 >
                     {modoEscuro ? (
-                        <>
-                            <Sun size={20} />
-                            <span>Modo claro</span>
-                        </>
+                        <Sun size={20} />
                     ) : (
-                        <>
-                            <Moon size={20} />
-                            <span>Modo escuro</span>
-                        </>
+                        <Moon size={20} />
+                    )}
+
+                    {aberto && (
+                        <span>
+                            {modoEscuro ? "Modo claro" : "Modo escuro"}
+                        </span>
                     )}
                 </button>
+
+               <button
+    className="menu-recolher"
+    onClick={mudarMenu}
+    title={aberto ? "Recolher menu" : "Expandir menu"}
+>
+    <ChevronsRight
+        size={20}
+        className={aberto ? "menu-seta-aberta" : ""}
+    />
+
+    {aberto && <span>Recolher menu</span>}
+</button>
 
             </div>
 

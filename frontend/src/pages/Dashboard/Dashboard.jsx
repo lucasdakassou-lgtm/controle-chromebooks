@@ -37,8 +37,24 @@ function Dashboard() {
                 ])
 
             setResumo(resumoResposta.data)
-            setRanking(rankingResposta.data)
-            setSalas(salasResposta.data)
+           console.log("[Dashboard] Tipo do ranking:", typeof rankingResposta.data)
+console.log("[Dashboard] É array?", Array.isArray(rankingResposta.data))
+console.log("[Dashboard] Conteúdo do ranking:", rankingResposta.data)
+
+setRanking(
+    Array.isArray(rankingResposta.data)
+        ? rankingResposta.data
+        : rankingResposta.data.ranking || rankingResposta.data.professores || []
+)
+           console.log("[Dashboard] Tipo das salas:", typeof salasResposta.data)
+console.log("[Dashboard] É array?", Array.isArray(salasResposta.data))
+console.log("[Dashboard] Conteúdo das salas:", salasResposta.data)
+
+setSalas(
+    Array.isArray(salasResposta.data)
+        ? salasResposta.data
+        : salasResposta.data.salas || []
+)
 
         } catch (error) {
             console.error(error)
@@ -341,5 +357,6 @@ function Dashboard() {
         </section>
     )
 }
+
 
 export default Dashboard
