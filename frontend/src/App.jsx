@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import Menu from "./components/Menu/Menu"
-import Dashboard from "./pages/Dashboard/Dashboard"
+import AppRoutes from "./routes/Approutes"
 
 function App() {
     const [modoEscuro, setModoEscuro] = useState(() => {
@@ -8,6 +8,7 @@ function App() {
     })
 
     const [menuAberto, setMenuAberto] = useState(true)
+    const [pagina, setPagina] = useState("dashboard")
 
     useEffect(() => {
         if (modoEscuro) {
@@ -34,14 +35,18 @@ function App() {
                 mudarTema={mudarTema}
                 aberto={menuAberto}
                 mudarMenu={mudarMenu}
+                pagina={pagina}
+                mudarPagina={setPagina}
             />
 
             <main
                 className={`conteudo ${
-                    menuAberto ? "conteudo-menu-aberto" : "conteudo-menu-fechado"
+                    menuAberto
+                        ? "conteudo-menu-aberto"
+                        : "conteudo-menu-fechado"
                 }`}
             >
-                <Dashboard />
+                <AppRoutes pagina={pagina} />
             </main>
         </div>
     )

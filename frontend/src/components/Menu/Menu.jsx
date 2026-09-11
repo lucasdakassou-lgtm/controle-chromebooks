@@ -13,7 +13,14 @@ import {
 
 import "./Menu.css"
 
-function Menu({ modoEscuro, mudarTema, aberto, mudarMenu }) {
+function Menu({
+    modoEscuro,
+    mudarTema,
+    aberto,
+    mudarMenu,
+    pagina,
+    mudarPagina
+}) {
    
 
     return (
@@ -38,21 +45,24 @@ function Menu({ modoEscuro, mudarTema, aberto, mudarMenu }) {
 
             <nav className="menu-navegacao">
 
-                <a href="#" className="menu-link menu-link-ativo">
-                    <LayoutDashboard size={20} />
-
-                    {aberto && (
-                        <span>Dashboard</span>
-                    )}
-                </a>
-
-                <a href="#" className="menu-link">
-                    <Laptop size={20} />
-
-                    {aberto && (
-                        <span>Empréstimos</span>
-                    )}
-                </a>
+             <button
+    className={`menu-link ${
+        pagina === "dashboard" ? "menu-link-ativo" : ""
+    }`}
+    onClick={() => mudarPagina("dashboard")}
+>
+    <LayoutDashboard size={20} />
+    {aberto && <span>Dashboard</span>}
+</button>
+              <button
+    className={`menu-link ${
+        pagina === "emprestimos" ? "menu-link-ativo" : ""
+    }`}
+    onClick={() => mudarPagina("emprestimos")}
+>
+    <Laptop size={20} />
+    {aberto && <span>Empréstimos</span>}
+</button>
 
                 <a href="#" className="menu-link">
                     <CalendarDays size={20} />
@@ -100,7 +110,7 @@ function Menu({ modoEscuro, mudarTema, aberto, mudarMenu }) {
 
                 <button
                     className="menu-tema"
-                    onClick={mudarMenu}
+                    onClick={mudarTema}
                     title={aberto ? "" : "Alterar tema"}
                 >
                     {modoEscuro ? (
@@ -129,10 +139,12 @@ function Menu({ modoEscuro, mudarTema, aberto, mudarMenu }) {
     {aberto && <span>Recolher menu</span>}
 </button>
 
+
             </div>
 
         </aside>
     )
 }
+
 
 export default Menu
