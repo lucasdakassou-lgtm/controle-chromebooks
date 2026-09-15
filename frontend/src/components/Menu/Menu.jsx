@@ -8,7 +8,8 @@ import {
     BarChart3,
     Sun,
     Moon,
-    ChevronsRight
+    ChevronsRight,
+    School
 } from "lucide-react"
 
 import "./Menu.css"
@@ -72,22 +73,31 @@ function Menu({
                     )}
                 </a>
 
-                <a href="#" className="menu-link">
-                    <Users size={20} />
+          <button
+    type="button"
+    className={`menu-link ${
+        pagina === "professores" ? "menu-link-ativo" : ""
+    }`}
+    onClick={() => mudarPagina("professores")}
+>
+    <Users size={20} />
 
-                    {aberto && (
-                        <span>Professores</span>
-                    )}
-                </a>
+    {aberto && (
+        <span>Professores</span>
+    )}
+</button>
 
-                <a href="#" className="menu-link">
-                    <GraduationCap size={20} />
+               <button
+    type="button"
+    className={`menu-link ${
+        pagina === "turmas" ? "menu-link-ativo" : ""
+    }`}
+    onClick={() => mudarPagina("turmas")}
+>
+    <School size={20} />
 
-                    {aberto && (
-                        <span>Turmas</span>
-                    )}
-                </a>
-
+    {aberto && <span>Turmas</span>}
+</button>
                 <a href="#" className="menu-link">
                     <AlertTriangle size={20} />
 

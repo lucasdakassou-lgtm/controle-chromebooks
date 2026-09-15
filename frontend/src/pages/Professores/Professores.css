@@ -1,0 +1,89 @@
+.professores {
+    width: 100%;
+}
+
+.professores-resumo {
+    width: 260px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    padding: 18px;
+    background: var(--branco);
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+}
+
+.professor-resumo-icone {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 9px;
+    background: rgba(139, 92, 246, 0.12);
+    color: var(--roxo);
+}
+
+.professores-resumo span {
+    display: block;
+    margin-bottom: 4px;
+    color: var(--cinza);
+    font-size: 12px;
+}
+
+.professores-resumo strong {
+    display: block;
+    color: var(--preto);
+    font-size: 22px;
+}
+
+.acoes {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.botao-acao {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--borda);
+    border-radius: 7px;
+    background: var(--branco);
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.botao-editar {
+    color: var(--azul);
+}
+
+.botao-editar:hover {
+    background: rgba(37, 99, 235, 0.1);
+    border-color: var(--azul);
+}
+
+.botao-excluir {
+    color: #dc2626;
+}
+
+.botao-excluir:hover {
+    background: rgba(220, 38, 38, 0.1);
+    border-color: #dc2626;
+}
+
+.professores-carregando,
+.professores-erro {
+    padding: 30px;
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+    background: var(--branco);
+    color: var(--cinza);
+}
+
+.professores-erro {
+    color: #dc2626;
+}
