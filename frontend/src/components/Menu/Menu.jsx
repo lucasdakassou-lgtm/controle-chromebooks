@@ -98,14 +98,17 @@ function Menu({
 
     {aberto && <span>Turmas</span>}
 </button>
-                <a href="#" className="menu-link">
-                    <AlertTriangle size={20} />
+                     <button
+    type="button"
+    className={`menu-link ${
+        pagina === "ocorrencias" ? "menu-link-ativo" : ""
+    }`}
+    onClick={() => mudarPagina("ocorrencias")}
+>
+    <School size={20} />
 
-                    {aberto && (
-                        <span>Ocorrências</span>
-                    )}
-                </a>
-
+    {aberto && <span>Ocorrencias</span>}
+</button>
                 <a href="#" className="menu-link">
                     <BarChart3 size={20} />
 

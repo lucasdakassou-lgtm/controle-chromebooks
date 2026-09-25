@@ -1,9 +1,11 @@
-import { useState } from "react"
 import Dashboard from "../pages/Dashboard/Dashboard"
 import Emprestimos from "../pages/Emprestimos/Emprestimos"
 import Professores from "../pages/Professores/Professores"
 import Turmas from "../pages/Turmas/Turmas"
+import Ocorrencias from "../pages/Ocorrencias/Ocorrencias"
+
 function AppRoutes({ pagina }) {
+
     if (pagina === "emprestimos") {
         return <Emprestimos />
     }
@@ -13,8 +15,12 @@ function AppRoutes({ pagina }) {
     }
 
     if (pagina === "turmas") {
-    return <Turmas />
-}
+        return <Turmas />
+    }
+
+    if (pagina === "ocorrencias") {
+        return <Ocorrencias />
+    }
 
     return <Dashboard />
 }
