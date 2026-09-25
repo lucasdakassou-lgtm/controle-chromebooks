@@ -1,0 +1,48 @@
+.ocorrencias{
+    max-width: 1600px;
+    margin: 0 auto;
+
+}
+
+/* Cabeçalhooo
+
+*/
+
+.ocorrencias-cabecalho{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    margin-bottom:28px;
+
+}
+.ocorrencia-cabecalho h1{
+
+margin:0;
+color:var(--preto);
+font-size: 26px;
+
+font-weight:700;
+}
+.ocorrencia-cabecalho p{
+    margin:6px 0 0;
+    color: var(--cinza);
+    font-size:14px;
+}
+/* CARDS ISSO AQUI */
+
+.ocorrencias .cards{
+
+    grid-template-columns:repeat(4,1fr);
+}
+.ocorrencias .card{
+    position: relative;
+}
+.ocorrencias .card-icone{
+margin-bottom: 18px;
+}
+
+/* PAINEL ISSO AQUII */
+
+.ocorrencias .painel{
+    
+}
