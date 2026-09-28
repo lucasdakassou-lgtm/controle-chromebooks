@@ -8,6 +8,7 @@ const turmaRoutes = require('./routes/turmaRoutes');
 const emprestimoRoutes = require('./routes/emprestimoRoutes');
 const ocorrenciasRoutes = require('./routes/ocorrenciasRoutes');
 const relatorioRoutes = require('./routes/relatorioRoutes');
+const agendamentoRoutes = require('./routes/agendamentoRoutes');
 // middlewares 
 const loggerMiddleware = require('./middlewares/loggerMiddleware');
 const notFoundMiddleware = require('./middlewares/notFoundMiddleware');
@@ -24,6 +25,7 @@ app.use('/turmas', turmaRoutes);
 app.use('/emprestimos', emprestimoRoutes);
 app.use('/ocorrencias', ocorrenciasRoutes);
 app.use('/relatorios', relatorioRoutes);
+app.use("/agendamentos", agendamentoRoutes);
 
 app.get('/', (req, res) => {
 

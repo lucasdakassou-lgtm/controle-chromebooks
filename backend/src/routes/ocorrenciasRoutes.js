@@ -7,7 +7,8 @@ const {
     listarOcorrencias,
     buscarOcorrenciaPorId,
     atualizarOcorrencia,
-    resolverOcorrencia
+    resolverOcorrencia,
+    excluirOcorrencia
 } = require('../controllers/ocorrenciasController');
 
 
@@ -29,6 +30,8 @@ router.put('/:id', atualizarOcorrencia);
 
 // Resolver ocorrência
 router.put('/:id/resolver', resolverOcorrencia);
+
+router.delete("/:id", excluirOcorrencia);
 
 
 module.exports = router;

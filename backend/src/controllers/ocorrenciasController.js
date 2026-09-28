@@ -474,6 +474,84 @@ const resolverOcorrencia = async (req, res) => {
     }
 
 };
+// =========================================================
+// EXCLUIR OCORRÊNCIA
+// =========================================================
+
+const excluirOcorrencia = async (req, res) => {
+
+    const { id } = req.params
+
+    console.log(`🗑️ Excluindo ocorrência ID: ${id}`)
+
+    try {
+
+        if (isNaN(id)) {
+
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'ID inválido.'
+            })
+
+        }
+
+
+        const resultado = await pool.query(
+            `
+            DELETE FROM ocorrencias
+            WHERE id = $1
+            RETURNING *
+            `,
+            [id]
+        )
+
+
+        if (resultado.rows.length === 0) {
+
+            return res.status(404).json({
+                sucesso: false,
+                mensagem: 'Ocorrência não encontrada.'
+            })
+
+        }
+
+
+        console.log(
+            '✅ OCORRÊNCIA EXCLUÍDA:',
+            resultado.rows[0].id
+        )
+
+
+        res.status(200).json({
+
+            sucesso: true,
+
+            mensagem: 'Ocorrência excluída com sucesso.',
+
+            ocorrencia: resultado.rows[0]
+
+        })
+
+
+    } catch (erro) {
+
+        console.error(
+            '❌ ERRO AO EXCLUIR OCORRÊNCIA'
+        )
+
+        console.error(erro.message)
+
+
+        res.status(500).json({
+
+            sucesso: false,
+
+            mensagem: 'Erro ao excluir ocorrência.'
+
+        })
+
+    }
+}
 
 
 module.exports = {
@@ -486,6 +564,8 @@ module.exports = {
 
     atualizarOcorrencia,
 
-    resolverOcorrencia
+    resolverOcorrencia,
+    
+    excluirOcorrencia
 
 };
