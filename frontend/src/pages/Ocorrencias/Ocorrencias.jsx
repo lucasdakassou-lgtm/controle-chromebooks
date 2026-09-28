@@ -9,7 +9,10 @@ import {
     ClipboardList,
     Check,
     X,
-    RefreshCw
+    RefreshCw,
+    Pencil,
+    Trash2,
+    Save
 } from "lucide-react"
 
 import api from "../../services/api"
@@ -23,48 +26,64 @@ function Ocorrencias() {
     // ESTADOS DA TELA
     // =========================================================
 
-    // Guarda todas as ocorrências vindas da API.
     const [ocorrencias, setOcorrencias] = useState([])
 
-    // Guarda os professores para usar no formulário.
     const [professores, setProfessores] = useState([])
 
-    // Texto digitado na busca.
     const [busca, setBusca] = useState("")
 
-    // Filtro atual da tabela.
     const [filtroStatus, setFiltroStatus] = useState("todos")
 
-    // Controla o carregamento da tabela.
     const [carregando, setCarregando] = useState(true)
 
-    // Mensagem de erro da página.
     const [erro, setErro] = useState("")
 
-    // Controla o modal de nova ocorrência.
-    const [modalAberto, setModalAberto] = useState(false)
-
-    // Controla o botão de salvar.
-    const [salvando, setSalvando] = useState(false)
-
-    // Guarda mensagem de erro do formulário.
-    const [erroFormulario, setErroFormulario] = useState("")
-
-    // Guarda uma mensagem rápida de sucesso.
     const [mensagemSucesso, setMensagemSucesso] = useState("")
-
-    // Guarda o ID da ocorrência que está sendo resolvida.
-    const [resolvendoId, setResolvendoId] = useState(null)
 
 
     // =========================================================
-    // ESTADOS DO FORMULÁRIO
+    // MODAL DE NOVA OCORRÊNCIA
+    // =========================================================
+
+    const [modalAberto, setModalAberto] = useState(false)
+
+    const [salvando, setSalvando] = useState(false)
+
+    const [erroFormulario, setErroFormulario] = useState("")
+
+
+    // =========================================================
+    // FORMULÁRIO DE NOVA OCORRÊNCIA
     // =========================================================
 
     const [professorSelecionado, setProfessorSelecionado] = useState("")
+
     const [sala, setSala] = useState("")
+
     const [tipo, setTipo] = useState("")
+
     const [descricao, setDescricao] = useState("")
+
+
+    // =========================================================
+    // MODAL DE ALTERAÇÃO DE STATUS
+    // =========================================================
+
+    const [modalStatusAberto, setModalStatusAberto] = useState(false)
+
+    const [ocorrenciaSelecionada, setOcorrenciaSelecionada] =
+        useState(null)
+
+    const [novoStatus, setNovoStatus] = useState("")
+
+    const [salvandoStatus, setSalvandoStatus] = useState(false)
+
+
+    // =========================================================
+    // EXCLUSÃO
+    // =========================================================
+
+    const [excluindoId, setExcluindoId] = useState(null)
 
 
     // =========================================================
@@ -76,6 +95,7 @@ function Ocorrencias() {
         console.log("[Ocorrências] Tela iniciada.")
 
         carregarOcorrencias()
+
         carregarProfessores()
 
     }, [])
@@ -90,9 +110,12 @@ function Ocorrencias() {
         try {
 
             setCarregando(true)
+
             setErro("")
 
-            console.log("[Ocorrências] Buscando ocorrências na API...")
+            console.log(
+                "[Ocorrências] Buscando ocorrências na API..."
+            )
 
             const resposta = await api.get("/ocorrencias")
 
@@ -103,8 +126,6 @@ function Ocorrencias() {
 
             const dados = resposta.data
 
-            // O backend pode devolver diretamente um array
-            // ou um objeto contendo "ocorrencias".
             const lista = Array.isArray(dados)
                 ? dados
                 : dados.ocorrencias || dados.dados || []
@@ -116,26 +137,22 @@ function Ocorrencias() {
 
             setOcorrencias(lista)
 
-     } catch (error) {
+        } catch (error) {
 
-    console.error("================================")
-    console.error("[Ocorrências] ERRO AO RESOLVER")
-    console.error("[Ocorrências] Mensagem:", error.message)
-    console.error("[Ocorrências] Status:", error.response?.status)
-    console.error("[Ocorrências] Resposta:", error.response?.data)
-    console.error("[Ocorrências] URL:", error.config?.url)
-    console.error("[Ocorrências] Dados enviados:", error.config?.data)
-    console.error("================================")
+            console.error(
+                "[Ocorrências] Erro ao carregar ocorrências:",
+                error
+            )
 
-    setErro(
-        error.response?.data?.mensagem ||
-        "Não foi possível resolver a ocorrência."
-    )
-
+            setErro(
+                error.response?.data?.mensagem ||
+                "Não foi possível carregar as ocorrências."
+            )
 
         } finally {
 
             setCarregando(false)
+
         }
     }
 
@@ -178,12 +195,13 @@ function Ocorrencias() {
                 "[Ocorrências] Erro ao carregar professores:",
                 error
             )
+
         }
     }
 
 
     // =========================================================
-    // ABRIR MODAL
+    // ABRIR MODAL DE NOVA OCORRÊNCIA
     // =========================================================
 
     function abrirModal() {
@@ -192,11 +210,14 @@ function Ocorrencias() {
             "[Ocorrências] Abrindo formulário de nova ocorrência."
         )
 
-        // Sempre começamos com o formulário limpo.
         setProfessorSelecionado("")
+
         setSala("")
+
         setTipo("")
+
         setDescricao("")
+
         setErroFormulario("")
 
         setModalAberto(true)
@@ -204,7 +225,7 @@ function Ocorrencias() {
 
 
     // =========================================================
-    // FECHAR MODAL
+    // FECHAR MODAL DE NOVA OCORRÊNCIA
     // =========================================================
 
     function fecharModal() {
@@ -214,6 +235,7 @@ function Ocorrencias() {
         )
 
         setModalAberto(false)
+
         setErroFormulario("")
     }
 
@@ -227,6 +249,7 @@ function Ocorrencias() {
         event.preventDefault()
 
         setErroFormulario("")
+
         setMensagemSucesso("")
 
 
@@ -243,6 +266,7 @@ function Ocorrencias() {
             return
         }
 
+
         if (!sala.trim()) {
 
             setErroFormulario(
@@ -252,6 +276,7 @@ function Ocorrencias() {
             return
         }
 
+
         if (!tipo) {
 
             setErroFormulario(
@@ -260,6 +285,7 @@ function Ocorrencias() {
 
             return
         }
+
 
         if (!descricao.trim()) {
 
@@ -272,7 +298,7 @@ function Ocorrencias() {
 
 
         // -----------------------------------------------------
-        // ENVIO PARA A API
+        // ENVIO PARA API
         // -----------------------------------------------------
 
         try {
@@ -283,36 +309,49 @@ function Ocorrencias() {
                 "[Ocorrências] Iniciando cadastro..."
             )
 
+
             const dados = {
+
                 professor_id: Number(professorSelecionado),
+
                 sala: sala.trim(),
+
                 tipo,
+
                 descricao: descricao.trim()
+
             }
+
 
             console.log(
                 "[Ocorrências] Dados enviados:",
                 dados
             )
 
+
             const resposta = await api.post(
                 "/ocorrencias",
                 dados
             )
+
 
             console.log(
                 "[Ocorrências] Cadastro realizado:",
                 resposta.data
             )
 
-            // Atualiza a tabela depois do cadastro.
+
+            // O backend já define o status inicial.
             await carregarOcorrencias()
 
+
             fecharModal()
+
 
             setMensagemSucesso(
                 "Ocorrência registrada com sucesso."
             )
+
 
         } catch (error) {
 
@@ -320,6 +359,7 @@ function Ocorrencias() {
                 "[Ocorrências] Erro ao registrar:",
                 error
             )
+
 
             setErroFormulario(
                 error.response?.data?.mensagem ||
@@ -329,59 +369,193 @@ function Ocorrencias() {
         } finally {
 
             setSalvando(false)
+
         }
     }
 
 
     // =========================================================
-    // RESOLVER OCORRÊNCIA
+    // ABRIR MODAL DE STATUS
     // =========================================================
 
-    async function resolverOcorrencia(id) {
+    function abrirModalStatus(ocorrencia) {
+
+        console.log(
+            "[Ocorrências] Alterando status da ocorrência:",
+            ocorrencia.id
+        )
+
+
+        setOcorrenciaSelecionada(ocorrencia)
+
+        setNovoStatus(
+            ocorrencia.status || "RESOLVIDA"
+        )
+
+        setErro("")
+
+        setModalStatusAberto(true)
+    }
+
+
+    // =========================================================
+    // FECHAR MODAL DE STATUS
+    // =========================================================
+
+    function fecharModalStatus() {
+
+        setModalStatusAberto(false)
+
+        setOcorrenciaSelecionada(null)
+
+        setNovoStatus("")
+
+    }
+
+
+    // =========================================================
+    // ALTERAR STATUS
+    // =========================================================
+
+    async function alterarStatus() {
+
+        if (!ocorrenciaSelecionada) {
+
+            return
+        }
+
 
         try {
 
-            setResolvendoId(id)
+            setSalvandoStatus(true)
+
             setErro("")
 
             console.log(
-                "[Ocorrências] Resolvendo ocorrência:",
-                id
-            )
-
-            const resposta = await api.put(
-                `/ocorrencias/${id}/resolver`,
+                "[Ocorrências] Salvando novo status:",
                 {
-                    responsavel: "PROATI"
+                    id: ocorrenciaSelecionada.id,
+                    status: novoStatus
                 }
             )
 
+
+            const resposta = await api.put(
+                `/ocorrencias/${ocorrenciaSelecionada.id}`,
+                {
+                    status: novoStatus
+                }
+            )
+
+
             console.log(
-                "[Ocorrências] Ocorrência resolvida:",
+                "[Ocorrências] Status atualizado:",
                 resposta.data
             )
 
+
             await carregarOcorrencias()
 
+
+            fecharModalStatus()
+
+
             setMensagemSucesso(
-                "Ocorrência marcada como resolvida."
+                "Status da ocorrência atualizado com sucesso."
             )
+
 
         } catch (error) {
 
             console.error(
-                "[Ocorrências] Erro ao resolver:",
+                "[Ocorrências] Erro ao alterar status:",
                 error
             )
 
+
             setErro(
                 error.response?.data?.mensagem ||
-                "Não foi possível resolver a ocorrência."
+                "Não foi possível alterar o status."
             )
 
         } finally {
 
-            setResolvendoId(null)
+            setSalvandoStatus(false)
+
+        }
+    }
+
+
+    // =========================================================
+    // EXCLUIR OCORRÊNCIA
+    // =========================================================
+
+    async function excluirOcorrencia(id) {
+
+        const confirmar = window.confirm(
+            "Tem certeza que deseja excluir esta ocorrência?"
+        )
+
+
+        if (!confirmar) {
+
+            console.log(
+                "[Ocorrências] Exclusão cancelada."
+            )
+
+            return
+        }
+
+
+        try {
+
+            setExcluindoId(id)
+
+            setErro("")
+
+
+            console.log(
+                "[Ocorrências] Excluindo ocorrência:",
+                id
+            )
+
+
+            const resposta = await api.delete(
+                `/ocorrencias/${id}`
+            )
+
+
+            console.log(
+                "[Ocorrências] Ocorrência excluída:",
+                resposta.data
+            )
+
+
+            await carregarOcorrencias()
+
+
+            setMensagemSucesso(
+                "Ocorrência excluída com sucesso."
+            )
+
+
+        } catch (error) {
+
+            console.error(
+                "[Ocorrências] Erro ao excluir:",
+                error
+            )
+
+
+            setErro(
+                error.response?.data?.mensagem ||
+                "Não foi possível excluir a ocorrência."
+            )
+
+        } finally {
+
+            setExcluindoId(null)
+
         }
     }
 
@@ -394,88 +568,127 @@ function Ocorrencias() {
 
         const texto = busca.toLowerCase().trim()
 
+
         return ocorrencias.filter((ocorrencia) => {
 
             const textoOcorrencia = [
+
                 ocorrencia.professor,
+
                 ocorrencia.professor_nome,
+
                 ocorrencia.sala,
+
                 ocorrencia.tipo,
+
                 ocorrencia.descricao
+
             ]
                 .filter(Boolean)
                 .join(" ")
                 .toLowerCase()
 
+
             const correspondeBusca =
                 textoOcorrencia.includes(texto)
+
 
             const correspondeStatus =
                 filtroStatus === "todos" ||
                 ocorrencia.status === filtroStatus
 
+
             return (
                 correspondeBusca &&
                 correspondeStatus
             )
+
         })
 
-    }, [ocorrencias, busca, filtroStatus])
+    }, [
+        ocorrencias,
+        busca,
+        filtroStatus
+    ])
 
 
     // =========================================================
     // INDICADORES
     // =========================================================
 
-    const totalOcorrencias = ocorrencias.length
+    const totalOcorrencias =
+        ocorrencias.length
 
-    const abertas = ocorrencias.filter(
-        (ocorrencia) =>
-            ocorrencia.status === "aberta"
-    ).length
 
-    const andamento = ocorrencias.filter(
-        (ocorrencia) =>
-            ocorrencia.status === "em_andamento"
-    ).length
+    const abertas =
+        ocorrencias.filter(
+            (ocorrencia) =>
+                ocorrencia.status === "ABERTA"
+        ).length
 
-    const resolvidas = ocorrencias.filter(
-        (ocorrencia) =>
-            ocorrencia.status === "resolvida"
-    ).length
+
+    const andamento =
+        ocorrencias.filter(
+            (ocorrencia) =>
+                ocorrencia.status === "EM_ANDAMENTO"
+        ).length
+
+
+    const resolvidas =
+        ocorrencias.filter(
+            (ocorrencia) =>
+                ocorrencia.status === "RESOLVIDA"
+        ).length
 
 
     // =========================================================
-    // STATUS
+    // MOSTRAR STATUS
     // =========================================================
 
     function mostrarStatus(status) {
 
-        if (status === "resolvida") {
+        if (status === "RESOLVIDA") {
 
             return (
+
                 <span className="status-ocorrencia status-resolvida">
+
                     <CheckCircle2 size={14} />
+
                     Resolvida
+
                 </span>
+
             )
         }
 
-        if (status === "em_andamento") {
+
+        if (status === "EM_ANDAMENTO") {
 
             return (
+
                 <span className="status-ocorrencia status-andamento">
+
                     <Clock3 size={14} />
+
                     Em andamento
+
                 </span>
+
             )
         }
+
 
         return (
+
             <span className="status-ocorrencia status-aberta">
+
                 <AlertTriangle size={14} />
+
                 Aberta
+
             </span>
+
         )
     }
 
@@ -488,9 +701,10 @@ function Ocorrencias() {
 
         <div className="ocorrencias">
 
-            {/* -------------------------------------------------
+
+            {/* =================================================
                 CABEÇALHO
-            ------------------------------------------------- */}
+            ================================================= */}
 
             <header className="ocorrencias-cabecalho">
 
@@ -500,7 +714,9 @@ function Ocorrencias() {
                         ATENDIMENTO PROATI
                     </span>
 
-                    <h1>Ocorrências</h1>
+                    <h1>
+                        Ocorrências
+                    </h1>
 
                     <p>
                         Registre, acompanhe e resolva problemas
@@ -509,21 +725,25 @@ function Ocorrencias() {
 
                 </div>
 
+
                 <button
                     type="button"
                     className="botao botao-principal"
                     onClick={abrirModal}
                 >
+
                     <Plus size={18} />
+
                     Nova ocorrência
+
                 </button>
 
             </header>
 
 
-            {/* -------------------------------------------------
-                MENSAGENS
-            ------------------------------------------------- */}
+            {/* =================================================
+                MENSAGEM DE SUCESSO
+            ================================================= */}
 
             {mensagemSucesso && (
 
@@ -535,18 +755,26 @@ function Ocorrencias() {
                         {mensagemSucesso}
                     </span>
 
+
                     <button
                         type="button"
                         onClick={() =>
                             setMensagemSucesso("")
                         }
                     >
+
                         <X size={16} />
+
                     </button>
 
                 </div>
+
             )}
 
+
+            {/* =================================================
+                MENSAGEM DE ERRO
+            ================================================= */}
 
             {erro && (
 
@@ -554,34 +782,46 @@ function Ocorrencias() {
 
                     <AlertTriangle size={17} />
 
-                    <span>{erro}</span>
+                    <span>
+                        {erro}
+                    </span>
+
 
                     <button
                         type="button"
                         onClick={() => setErro("")}
                     >
+
                         <X size={16} />
+
                     </button>
 
                 </div>
+
             )}
 
 
-            {/* -------------------------------------------------
-                CARDS DE RESUMO
-            ------------------------------------------------- */}
+            {/* =================================================
+                CARDS
+            ================================================= */}
 
             <section className="cards">
+
 
                 <div className="card">
 
                     <div className="card-icone card-icone-roxo">
+
                         <ClipboardList size={21} />
+
                     </div>
+
 
                     <div className="card-conteudo">
 
-                        <span>Total de ocorrências</span>
+                        <span>
+                            Total de ocorrências
+                        </span>
 
                         <strong>
                             {totalOcorrencias}
@@ -595,12 +835,17 @@ function Ocorrencias() {
                 <div className="card">
 
                     <div className="card-icone card-icone-laranja">
+
                         <AlertTriangle size={21} />
+
                     </div>
+
 
                     <div className="card-conteudo">
 
-                        <span>Em aberto</span>
+                        <span>
+                            Em aberto
+                        </span>
 
                         <strong>
                             {abertas}
@@ -614,12 +859,17 @@ function Ocorrencias() {
                 <div className="card">
 
                     <div className="card-icone card-icone-azul">
+
                         <Clock3 size={21} />
+
                     </div>
+
 
                     <div className="card-conteudo">
 
-                        <span>Em andamento</span>
+                        <span>
+                            Em andamento
+                        </span>
 
                         <strong>
                             {andamento}
@@ -633,12 +883,17 @@ function Ocorrencias() {
                 <div className="card">
 
                     <div className="card-icone card-icone-verde">
+
                         <CheckCircle2 size={21} />
+
                     </div>
+
 
                     <div className="card-conteudo">
 
-                        <span>Resolvidas</span>
+                        <span>
+                            Resolvidas
+                        </span>
 
                         <strong>
                             {resolvidas}
@@ -648,14 +903,16 @@ function Ocorrencias() {
 
                 </div>
 
+
             </section>
 
 
-            {/* -------------------------------------------------
+            {/* =================================================
                 PAINEL PRINCIPAL
-            ------------------------------------------------- */}
+            ================================================= */}
 
             <section className="painel">
+
 
                 <div className="painel-cabecalho">
 
@@ -679,42 +936,55 @@ function Ocorrencias() {
                         onClick={carregarOcorrencias}
                         title="Atualizar ocorrências"
                     >
+
                         <RefreshCw size={16} />
+
                         Atualizar
+
                     </button>
 
                 </div>
 
 
-                {/* -------------------------------------------------
+                {/* =================================================
                     FILTROS
-                ------------------------------------------------- */}
+                ================================================= */}
 
                 <div className="ocorrencias-filtros">
+
 
                     <div className="campo-busca">
 
                         <Search size={17} />
+
 
                         <input
                             type="text"
                             placeholder="Buscar professor, sala, tipo..."
                             value={busca}
                             onChange={(event) =>
-                                setBusca(event.target.value)
+                                setBusca(
+                                    event.target.value
+                                )
                             }
                         />
+
 
                         {busca && (
 
                             <button
                                 type="button"
                                 className="busca-limpar"
-                                onClick={() => setBusca("")}
+                                onClick={() =>
+                                    setBusca("")
+                                }
                                 title="Limpar busca"
                             >
+
                                 <X size={15} />
+
                             </button>
+
                         )}
 
                     </div>
@@ -734,15 +1004,15 @@ function Ocorrencias() {
                             Todos os status
                         </option>
 
-                        <option value="aberta">
+                        <option value="ABERTA">
                             Em aberto
                         </option>
 
-                        <option value="em_andamento">
+                        <option value="EM_ANDAMENTO">
                             Em andamento
                         </option>
 
-                        <option value="resolvida">
+                        <option value="RESOLVIDA">
                             Resolvidas
                         </option>
 
@@ -751,45 +1021,72 @@ function Ocorrencias() {
                 </div>
 
 
-                {/* -------------------------------------------------
-                    RESULTADO DA BUSCA
-                ------------------------------------------------- */}
+                {/* =================================================
+                    RESULTADO
+                ================================================= */}
 
                 {!carregando && (
 
                     <div className="resultado-filtro">
 
                         <span>
+
                             {ocorrenciasFiltradas.length}
+
                             {" "}
+
                             {ocorrenciasFiltradas.length === 1
                                 ? "ocorrência encontrada"
-                                : "ocorrências encontradas"}
+                                : "ocorrências encontradas"
+                            }
+
                         </span>
 
                     </div>
+
                 )}
 
 
-                {/* -------------------------------------------------
+                {/* =================================================
                     TABELA
-                ------------------------------------------------- */}
+                ================================================= */}
 
                 <div className="tabela-container">
 
                     <table className="tabela">
 
+
                         <thead>
 
                             <tr>
 
-                                <th>Professor</th>
-                                <th>Sala</th>
-                                <th>Tipo</th>
-                                <th>Descrição</th>
-                                <th>Data</th>
-                                <th>Status</th>
-                                <th></th>
+                                <th>
+                                    Professor
+                                </th>
+
+                                <th>
+                                    Sala
+                                </th>
+
+                                <th>
+                                    Tipo
+                                </th>
+
+                                <th>
+                                    Descrição
+                                </th>
+
+                                <th>
+                                    Data
+                                </th>
+
+                                <th>
+                                    Status
+                                </th>
+
+                                <th>
+                                    Ações
+                                </th>
 
                             </tr>
 
@@ -797,6 +1094,7 @@ function Ocorrencias() {
 
 
                         <tbody>
+
 
                             {carregando ? (
 
@@ -824,6 +1122,7 @@ function Ocorrencias() {
 
                                 </tr>
 
+
                             ) : ocorrenciasFiltradas.length === 0 ? (
 
                                 <tr>
@@ -836,18 +1135,29 @@ function Ocorrencias() {
                                         <div className="estado-vazio">
 
                                             <div className="estado-vazio-icone">
-                                                <ClipboardList size={24} />
+
+                                                <ClipboardList
+                                                    size={24}
+                                                />
+
                                             </div>
+
 
                                             <strong>
                                                 Nenhuma ocorrência encontrada
                                             </strong>
 
+
                                             <span>
-                                                {busca || filtroStatus !== "todos"
+
+                                                {busca ||
+                                                filtroStatus !== "todos"
+
                                                     ? "Tente alterar os filtros de busca."
+
                                                     : "As ocorrências registradas aparecerão aqui."
                                                 }
+
                                             </span>
 
                                         </div>
@@ -855,6 +1165,7 @@ function Ocorrencias() {
                                     </td>
 
                                 </tr>
+
 
                             ) : (
 
@@ -865,16 +1176,21 @@ function Ocorrencias() {
                                             key={ocorrencia.id}
                                         >
 
+
+                                            {/* PROFESSOR */}
+
                                             <td>
 
                                                 <div className="professor-celula">
 
                                                     <strong>
+
                                                         {
                                                             ocorrencia.professor ||
                                                             ocorrencia.professor_nome ||
                                                             "-"
                                                         }
+
                                                     </strong>
 
                                                 </div>
@@ -882,23 +1198,39 @@ function Ocorrencias() {
                                             </td>
 
 
+                                            {/* SALA */}
+
                                             <td>
 
                                                 <span className="texto-sala">
-                                                    {ocorrencia.sala || "-"}
+
+                                                    {
+                                                        ocorrencia.sala ||
+                                                        "-"
+                                                    }
+
                                                 </span>
 
                                             </td>
 
+
+                                            {/* TIPO */}
 
                                             <td>
 
                                                 <span className="tipo-ocorrencia">
-                                                    {ocorrencia.tipo || "-"}
+
+                                                    {
+                                                        ocorrencia.tipo ||
+                                                        "-"
+                                                    }
+
                                                 </span>
 
                                             </td>
 
+
+                                            {/* DESCRIÇÃO */}
 
                                             <td>
 
@@ -908,20 +1240,25 @@ function Ocorrencias() {
                                                         ocorrencia.descricao
                                                     }
                                                 >
+
                                                     {
                                                         ocorrencia.descricao ||
                                                         "-"
                                                     }
+
                                                 </div>
 
                                             </td>
 
+
+                                            {/* DATA */}
 
                                             <td>
 
                                                 <span className="data-ocorrencia">
 
                                                     {ocorrencia.data_abertura
+
                                                         ? new Date(
                                                             ocorrencia.data_abertura
                                                         ).toLocaleString(
@@ -934,6 +1271,7 @@ function Ocorrencias() {
                                                                 minute: "2-digit"
                                                             }
                                                         )
+
                                                         : "-"
                                                     }
 
@@ -942,49 +1280,92 @@ function Ocorrencias() {
                                             </td>
 
 
+                                            {/* STATUS */}
+
                                             <td>
+
                                                 {mostrarStatus(
                                                     ocorrencia.status
                                                 )}
+
                                             </td>
 
+
+                                            {/* AÇÕES */}
 
                                             <td>
 
-                                                {ocorrencia.status !== "resolvida" && (
+                                                <div className="acoes-ocorrencia">
+
 
                                                     <button
                                                         type="button"
-                                                        className="botao-resolver"
-                                                        disabled={
-                                                            resolvendoId ===
-                                                            ocorrencia.id
-                                                        }
+                                                        className="botao-acao botao-status"
                                                         onClick={() =>
-                                                            resolverOcorrencia(
-                                                                ocorrencia.id
+                                                            abrirModalStatus(
+                                                                ocorrencia
                                                             )
                                                         }
+                                                        title="Alterar status"
                                                     >
 
-                                                        <Check size={15} />
+                                                        <Pencil size={15} />
 
-                                                        {resolvendoId ===
-                                                        ocorrencia.id
-                                                            ? "Resolvendo..."
-                                                            : "Resolver"
-                                                        }
+                                                        <span>
+                                                            Status
+                                                        </span>
 
                                                     </button>
 
-                                                )}
+
+                                                    <button
+                                                        type="button"
+                                                        className="botao-acao botao-excluir"
+                                                        disabled={
+                                                            excluindoId ===
+                                                            ocorrencia.id
+                                                        }
+                                                        onClick={() =>
+                                                            excluirOcorrencia(
+                                                                ocorrencia.id
+                                                            )
+                                                        }
+                                                        title="Excluir ocorrência"
+                                                    >
+
+                                                        {excluindoId ===
+                                                        ocorrencia.id ? (
+
+                                                            <RefreshCw
+                                                                size={15}
+                                                                className="icone-carregando"
+                                                            />
+
+                                                        ) : (
+
+                                                            <Trash2
+                                                                size={15}
+                                                            />
+
+                                                        )}
+
+                                                        <span>
+                                                            Excluir
+                                                        </span>
+
+                                                    </button>
+
+
+                                                </div>
 
                                             </td>
+
 
                                         </tr>
 
                                     )
                                 )
+
                             )}
 
                         </tbody>
@@ -996,9 +1377,9 @@ function Ocorrencias() {
             </section>
 
 
-            {/* -------------------------------------------------
-                MODAL DE NOVA OCORRÊNCIA
-            ------------------------------------------------- */}
+            {/* =================================================
+                MODAL NOVA OCORRÊNCIA
+            ================================================= */}
 
             {modalAberto && (
 
@@ -1010,11 +1391,14 @@ function Ocorrencias() {
                             event.target ===
                             event.currentTarget
                         ) {
+
                             fecharModal()
+
                         }
 
                     }}
                 >
+
 
                     <div
                         className="modal"
@@ -1022,6 +1406,7 @@ function Ocorrencias() {
                             event.stopPropagation()
                         }
                     >
+
 
                         <div className="modal-cabecalho">
 
@@ -1042,13 +1427,16 @@ function Ocorrencias() {
 
                             </div>
 
+
                             <button
                                 type="button"
                                 className="modal-fechar"
                                 onClick={fecharModal}
                                 title="Fechar"
                             >
+
                                 <X size={19} />
+
                             </button>
 
                         </div>
@@ -1058,6 +1446,7 @@ function Ocorrencias() {
                             className="formulario"
                             onSubmit={registrarOcorrencia}
                         >
+
 
                             {erroFormulario && (
 
@@ -1070,6 +1459,7 @@ function Ocorrencias() {
                                     </span>
 
                                 </div>
+
                             )}
 
 
@@ -1081,9 +1471,15 @@ function Ocorrencias() {
                                     className="campo-label"
                                     htmlFor="professor"
                                 >
+
                                     Professor
-                                    <span>*</span>
+
+                                    <span>
+                                        *
+                                    </span>
+
                                 </label>
+
 
                                 <select
                                     id="professor"
@@ -1100,6 +1496,7 @@ function Ocorrencias() {
                                         Selecione o professor
                                     </option>
 
+
                                     {professores.map(
                                         (professor) => (
 
@@ -1107,7 +1504,9 @@ function Ocorrencias() {
                                                 key={professor.id}
                                                 value={professor.id}
                                             >
+
                                                 {professor.nome}
+
                                             </option>
 
                                         )
@@ -1126,9 +1525,15 @@ function Ocorrencias() {
                                     className="campo-label"
                                     htmlFor="sala"
                                 >
+
                                     Sala
-                                    <span>*</span>
+
+                                    <span>
+                                        *
+                                    </span>
+
                                 </label>
+
 
                                 <input
                                     id="sala"
@@ -1154,9 +1559,15 @@ function Ocorrencias() {
                                     className="campo-label"
                                     htmlFor="tipo"
                                 >
+
                                     Tipo do problema
-                                    <span>*</span>
+
+                                    <span>
+                                        *
+                                    </span>
+
                                 </label>
+
 
                                 <select
                                     id="tipo"
@@ -1210,9 +1621,15 @@ function Ocorrencias() {
                                     className="campo-label"
                                     htmlFor="descricao"
                                 >
+
                                     Descrição
-                                    <span>*</span>
+
+                                    <span>
+                                        *
+                                    </span>
+
                                 </label>
+
 
                                 <textarea
                                     id="descricao"
@@ -1227,9 +1644,12 @@ function Ocorrencias() {
                                     rows="4"
                                 />
 
+
                                 <span className="campo-ajuda">
+
                                     Descreva o problema de forma
                                     objetiva para facilitar o atendimento.
+
                                 </span>
 
                             </div>
@@ -1239,14 +1659,18 @@ function Ocorrencias() {
 
                             <div className="modal-acoes">
 
+
                                 <button
                                     type="button"
                                     className="botao-secundario"
                                     onClick={fecharModal}
                                     disabled={salvando}
                                 >
+
                                     Cancelar
+
                                 </button>
+
 
                                 <button
                                     type="submit"
@@ -1255,18 +1679,28 @@ function Ocorrencias() {
                                 >
 
                                     {salvando ? (
+
                                         <>
+
                                             <RefreshCw
                                                 size={16}
                                                 className="icone-carregando"
                                             />
+
                                             Salvando...
+
                                         </>
+
                                     ) : (
+
                                         <>
+
                                             <Check size={16} />
+
                                             Registrar ocorrência
+
                                         </>
+
                                     )}
 
                                 </button>
@@ -1278,6 +1712,194 @@ function Ocorrencias() {
                     </div>
 
                 </div>
+
+            )}
+
+
+            {/* =================================================
+                MODAL ALTERAR STATUS
+            ================================================= */}
+
+            {modalStatusAberto && (
+
+                <div
+                    className="modal-fundo"
+                    onMouseDown={(event) => {
+
+                        if (
+                            event.target ===
+                            event.currentTarget
+                        ) {
+
+                            fecharModalStatus()
+
+                        }
+
+                    }}
+                >
+
+
+                    <div
+                        className="modal modal-status"
+                        onMouseDown={(event) =>
+                            event.stopPropagation()
+                        }
+                    >
+
+
+                        <div className="modal-cabecalho">
+
+                            <div>
+
+                                <span className="modal-overline">
+                                    GERENCIAR OCORRÊNCIA
+                                </span>
+
+                                <h2>
+                                    Alterar status
+                                </h2>
+
+                                <p>
+                                    Escolha o novo status para esta ocorrência.
+                                </p>
+
+                            </div>
+
+
+                            <button
+                                type="button"
+                                className="modal-fechar"
+                                onClick={fecharModalStatus}
+                                title="Fechar"
+                            >
+
+                                <X size={19} />
+
+                            </button>
+
+                        </div>
+
+
+                        <div className="formulario">
+
+
+                            {ocorrenciaSelecionada && (
+
+                                <div className="resumo-status">
+
+                                    <span>
+                                        Ocorrência #{ocorrenciaSelecionada.id}
+                                    </span>
+
+                                    <strong>
+                                        {
+                                            ocorrenciaSelecionada.descricao ||
+                                            "Sem descrição"
+                                        }
+                                    </strong>
+
+                                </div>
+
+                            )}
+
+
+                            <div className="campo">
+
+                                <label
+                                    className="campo-label"
+                                    htmlFor="novo-status"
+                                >
+
+                                    Novo status
+
+                                </label>
+
+
+                                <select
+                                    id="novo-status"
+                                    className="campo-input"
+                                    value={novoStatus}
+                                    onChange={(event) =>
+                                        setNovoStatus(
+                                            event.target.value
+                                        )
+                                    }
+                                >
+
+                                    <option value="ABERTA">
+                                        Aberta
+                                    </option>
+
+                                    <option value="EM_ANDAMENTO">
+                                        Em andamento
+                                    </option>
+
+                                    <option value="RESOLVIDA">
+                                        Resolvida
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+
+                            <div className="modal-acoes">
+
+
+                                <button
+                                    type="button"
+                                    className="botao-secundario"
+                                    onClick={fecharModalStatus}
+                                    disabled={salvandoStatus}
+                                >
+
+                                    Cancelar
+
+                                </button>
+
+
+                                <button
+                                    type="button"
+                                    className="botao botao-principal"
+                                    onClick={alterarStatus}
+                                    disabled={salvandoStatus}
+                                >
+
+                                    {salvandoStatus ? (
+
+                                        <>
+
+                                            <RefreshCw
+                                                size={16}
+                                                className="icone-carregando"
+                                            />
+
+                                            Salvando...
+
+                                        </>
+
+                                    ) : (
+
+                                        <>
+
+                                            <Save size={16} />
+
+                                            Salvar status
+
+                                        </>
+
+                                    )}
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
             )}
 
         </div>

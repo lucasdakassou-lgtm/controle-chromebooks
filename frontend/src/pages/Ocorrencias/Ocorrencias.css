@@ -959,3 +959,130 @@ body.modo-escuro .modal-erro {
         padding: 20px;
     }
 }
+/* =========================================================
+   AÇÕES DA OCORRÊNCIA
+========================================================= */
+
+.acoes-ocorrencia {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+.botao-acao {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    height: 34px;
+
+    padding: 0 10px;
+
+    border-radius: 8px;
+
+    border: 1px solid var(--borda);
+
+    background: transparent;
+
+    color: var(--preto);
+
+    font-size: 12px;
+    font-weight: 600;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+
+    white-space: nowrap;
+}
+
+
+.botao-acao:hover {
+    background: var(--fundo);
+}
+
+
+.botao-status:hover {
+    border-color: var(--azul);
+    color: var(--azul);
+}
+
+
+.botao-excluir {
+    color: #ef4444;
+}
+
+
+.botao-excluir:hover {
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.08);
+}
+
+
+.botao-acao:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   MODAL DE STATUS
+========================================================= */
+
+.modal-status {
+    max-width: 520px;
+}
+
+
+.resumo-status {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+
+    padding: 14px 16px;
+
+    margin-bottom: 20px;
+
+    border: 1px solid var(--borda);
+
+    border-radius: 10px;
+
+    background: var(--fundo);
+}
+
+
+.resumo-status span {
+    font-size: 12px;
+
+    color: var(--cinza);
+}
+
+
+.resumo-status strong {
+    font-size: 14px;
+
+    color: var(--preto);
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   RESPONSIVIDADE DAS AÇÕES
+========================================================= */
+
+@media (max-width: 900px) {
+
+    .acoes-ocorrencia {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .botao-acao {
+        width: 100%;
+    }
+
+}

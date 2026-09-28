@@ -65,13 +65,13 @@ function Menu({
     {aberto && <span>Empréstimos</span>}
 </button>
 
-                <a href="#" className="menu-link">
-                    <CalendarDays size={20} />
-
-                    {aberto && (
-                        <span>Agendamentos</span>
-                    )}
-                </a>
+     <button
+    className={`menu-link ${pagina === "agendamentos" ? "menu-link-ativo" : ""}`}
+    onClick={() => mudarPagina("agendamentos")}
+>
+    <CalendarDays size={20} />
+    {aberto && <span>Agendamentos</span>}
+</button>
 
           <button
     type="button"
@@ -109,14 +109,19 @@ function Menu({
 
     {aberto && <span>Ocorrencias</span>}
 </button>
-                <a href="#" className="menu-link">
-                    <BarChart3 size={20} />
-
-                    {aberto && (
-                        <span>Relatórios</span>
-                    )}
-                </a>
-
+                     <button
+    type="button"
+    className={`menu-link ${
+        pagina === "relatorios" ? "menu-link-ativo" : ""
+    }`}
+    onClick={() => mudarPagina("relatorios")}
+>
+    <Users size={20} />
+       {aberto && (
+        <span>Relatórios</span>
+    )}
+</button>
+ 
             </nav>
 
             <div className="menu-final">
