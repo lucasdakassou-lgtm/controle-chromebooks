@@ -24,45 +24,101 @@ function Dashboard() {
         carregarDashboard()
     }, [])
 
-    async function carregarDashboard() {
-        try {
-            setCarregando(true)
-            setErro("")
+  async function carregarDashboard() {
+    try {
+        setCarregando(true)
+        setErro("")
 
-            const [resumoResposta, rankingResposta, salasResposta] =
-                await Promise.all([
-                    api.get("/relatorios/resumo"),
-                    api.get("/relatorios/ranking-professores"),
-                    api.get("/relatorios/ocorrencias-salas")
-                ])
+        const [resumoResposta, rankingResposta, salasResposta] =
+            await Promise.all([
+                api.get("/relatorios/resumo"),
+                api.get("/relatorios/ranking-professores"),
+                api.get("/relatorios/ocorrencias-salas")
+            ])
 
-            setResumo(resumoResposta.data)
-           console.log("[Dashboard] Tipo do ranking:", typeof rankingResposta.data)
-console.log("[Dashboard] É array?", Array.isArray(rankingResposta.data))
-console.log("[Dashboard] Conteúdo do ranking:", rankingResposta.data)
+        // ==============================
+        // RESUMO
+        // ==============================
+const dadosResumo = resumoResposta.data.dados
 
+console.log("[Dashboard] Resumo recebido:", dadosResumo)
+
+setResumo(dadosResumo)
+
+        // ==============================
+        // RANKING DE PROFESSORES
+        // ==============================
+
+        console.log(
+            "[Dashboard] Tipo do ranking:",
+            typeof rankingResposta.data
+        )
+
+        console.log(
+            "[Dashboard] É array?",
+            Array.isArray(rankingResposta.data)
+        )
+
+        console.log(
+            "[Dashboard] Conteúdo do ranking:",
+            rankingResposta.data
+        )
 setRanking(
     Array.isArray(rankingResposta.data)
         ? rankingResposta.data
-        : rankingResposta.data.ranking || rankingResposta.data.professores || []
+        : rankingResposta.data.dados ||
+          rankingResposta.data.ranking ||
+          rankingResposta.data.professores ||
+          []
 )
-           console.log("[Dashboard] Tipo das salas:", typeof salasResposta.data)
-console.log("[Dashboard] É array?", Array.isArray(salasResposta.data))
-console.log("[Dashboard] Conteúdo das salas:", salasResposta.data)
+        // ==============================
+        // OCORRÊNCIAS POR SALA
+        // ==============================
 
+        console.log(
+            "[Dashboard] Tipo das salas:",
+            typeof salasResposta.data
+        )
+
+        console.log(
+            "[Dashboard] É array?",
+            Array.isArray(salasResposta.data)
+        )
+
+        console.log(
+            "[Dashboard] Conteúdo das salas:",
+            salasResposta.data
+        )
+
+        setSalas(
+            Array.isArray(salasResposta.data)
+                ? salasResposta.data
+                : salasResposta.data.salas || []
+        )
 setSalas(
     Array.isArray(salasResposta.data)
         ? salasResposta.data
-        : salasResposta.data.salas || []
+        : salasResposta.data.dados ||
+          salasResposta.data.salas ||
+          []
 )
+    } catch (error) {
 
-        } catch (error) {
-            console.error(error)
-            setErro("Não foi possível carregar os dados do dashboard.")
-        } finally {
-            setCarregando(false)
-        }
+        console.error(
+            "[Dashboard] Erro:",
+            error
+        )
+
+        setErro(
+            "Não foi possível carregar os dados do dashboard."
+        )
+
+    } finally {
+
+        setCarregando(false)
+
     }
+}
 
     if (carregando) {
         return (
@@ -116,7 +172,7 @@ setSalas(
                     </p>
 
                     <strong className="card-numero">
-                        {resumo?.total_chromebooks ?? 47}
+                        {resumo?.total_chromebooks ?? 0}
                     </strong>
 
                     <span className="card-descricao">
@@ -210,7 +266,7 @@ setSalas(
                                 Nenhum empréstimo registrado.
                             </p>
                         ) : (
-                            ranking.slice(0, 5).map((professor, index) => (
+                            ranking.slice(0, 3).map((professor, index) => (
                                 <div
                                     className="ranking-item"
                                     key={professor.professor_id || index}
@@ -261,7 +317,7 @@ setSalas(
                                 Nenhuma ocorrência registrada.
                             </p>
                         ) : (
-                            salas.slice(0, 5).map((sala, index) => (
+                            salas.slice(0, 3).map((sala, index) => (
                                 <div
                                     className="ranking-item"
                                     key={sala.sala || index}

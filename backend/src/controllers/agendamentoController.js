@@ -51,13 +51,43 @@ const obterDiaSemana = (data) => {
 
 
 // =========================================================
+// AUXILIAR — DATA ATUAL DO BRASIL
+// =========================================================
+
+const obterDataAtualBrasil = () => {
+
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    }).format(new Date());
+};
+
+
+// =========================================================
+// AUXILIAR — HORA ATUAL DO BRASIL
+// =========================================================
+
+const obterHoraAtualBrasil = () => {
+
+    return new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'America/Sao_Paulo',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false
+    }).format(new Date());
+};
+
+
+// =========================================================
 // GET /agendamentos
 // LISTAR TODOS OS AGENDAMENTOS
 // =========================================================
 
 const listarAgendamentos = async (req, res) => {
 
-    console.log('📅 Listando agendamentos...');
+    console.log('Listando agendamentos...');
 
     try {
 
@@ -93,7 +123,7 @@ const listarAgendamentos = async (req, res) => {
         `);
 
         console.log(
-            `✅ ${resultado.rows.length} agendamento(s) encontrado(s).`
+            `${resultado.rows.length} agendamento(s) encontrado(s).`
         );
 
         return res.status(200).json({
@@ -104,7 +134,7 @@ const listarAgendamentos = async (req, res) => {
 
     } catch (erro) {
 
-        console.error('❌ ERRO AO LISTAR AGENDAMENTOS');
+        console.error('ERRO AO LISTAR AGENDAMENTOS');
         console.error(erro.message);
 
         return res.status(500).json({
@@ -124,7 +154,7 @@ const buscarAgendamentoPorId = async (req, res) => {
 
     const { id } = req.params;
 
-    console.log(`🔎 Buscando agendamento ID: ${id}`);
+    console.log(`Buscando agendamento ID: ${id}`);
 
     try {
 
@@ -179,7 +209,7 @@ const buscarAgendamentoPorId = async (req, res) => {
 
     } catch (erro) {
 
-        console.error('❌ ERRO AO BUSCAR AGENDAMENTO');
+        console.error('ERRO AO BUSCAR AGENDAMENTO');
         console.error(erro.message);
 
         return res.status(500).json({
@@ -208,7 +238,7 @@ const criarAgendamento = async (req, res) => {
 
     console.log('');
     console.log('==========================================');
-    console.log('📅 NOVA TENTATIVA DE AGENDAMENTO');
+    console.log('NOVA TENTATIVA DE AGENDAMENTO');
     console.log('==========================================');
     console.log('Dados recebidos:', req.body);
 
@@ -272,21 +302,62 @@ const criarAgendamento = async (req, res) => {
         const horario = HORARIOS_AULAS[numeroAula];
 
         console.log(
-            `🕐 Aula ${numeroAula}: ${horario.inicio} - ${horario.fim}`
+            `Aula ${numeroAula}: ${horario.inicio} - ${horario.fim}`
         );
 
 
         // -------------------------------------------------
-        // 5. DESCOBRIR O DIA DA SEMANA
+        // 5. VALIDAR DATA E HORÁRIO
+        // -------------------------------------------------
+
+        const dataAtualBrasil = obterDataAtualBrasil();
+        const horaAtualBrasil = obterHoraAtualBrasil();
+
+        console.log('Data atual:', dataAtualBrasil);
+        console.log('Hora atual:', horaAtualBrasil);
+        console.log('Data selecionada:', data);
+
+
+        // Data anterior ao dia atual
+        if (data < dataAtualBrasil) {
+
+            console.log('Agendamento bloqueado: data passada.');
+
+            return res.status(400).json({
+                sucesso: false,
+                mensagem: 'Não é possível realizar agendamentos para datas passadas.'
+            });
+        }
+
+
+        // Se for hoje, verificar se a aula já começou
+        if (data === dataAtualBrasil) {
+
+            if (horario.inicio <= horaAtualBrasil) {
+
+                console.log(
+                    `Agendamento bloqueado: a ${numeroAula}ª aula já começou.`
+                );
+
+                return res.status(400).json({
+                    sucesso: false,
+                    mensagem: `A ${numeroAula}ª aula já começou. Selecione uma aula futura.`
+                });
+            }
+        }
+
+
+        // -------------------------------------------------
+        // 6. DESCOBRIR O DIA DA SEMANA
         // -------------------------------------------------
 
         const diaSemana = obterDiaSemana(data);
 
-        console.log(`📆 Dia da semana: ${diaSemana}`);
+        console.log(`Dia da semana: ${diaSemana}`);
 
 
         // -------------------------------------------------
-        // 6. NÃO PERMITIR FIM DE SEMANA
+        // 7. NÃO PERMITIR FIM DE SEMANA
         // -------------------------------------------------
 
         if (
@@ -302,7 +373,7 @@ const criarAgendamento = async (req, res) => {
 
 
         // -------------------------------------------------
-        // 7. VERIFICAR SE O TÉCNICO OCUPA O HORÁRIO
+        // 8. VERIFICAR SE O TÉCNICO OCUPA O HORÁRIO
         // -------------------------------------------------
 
         const bloqueio = await pool.query(`
@@ -314,6 +385,7 @@ const criarAgendamento = async (req, res) => {
                 hb.hora_inicio,
                 hb.hora_fim,
                 hb.descricao
+
             FROM horarios_bloqueados hb
 
             WHERE hb.dia_semana = $1
@@ -331,7 +403,7 @@ const criarAgendamento = async (req, res) => {
         if (bloqueio.rows.length > 0) {
 
             console.log(
-                '🚫 Horário bloqueado pelo Técnico.'
+                'Horário bloqueado pelo Técnico.'
             );
 
             return res.status(409).json({
@@ -343,7 +415,7 @@ const criarAgendamento = async (req, res) => {
 
 
         // -------------------------------------------------
-        // 8. VERIFICAR SE JÁ EXISTE AGENDAMENTO
+        // 9. VERIFICAR SE JÁ EXISTE AGENDAMENTO
         // -------------------------------------------------
 
         const conflito = await pool.query(`
@@ -366,7 +438,7 @@ const criarAgendamento = async (req, res) => {
         if (conflito.rows.length > 0) {
 
             console.log(
-                '🚫 Horário já possui agendamento.'
+                'Horário já possui agendamento.'
             );
 
             return res.status(409).json({
@@ -377,7 +449,7 @@ const criarAgendamento = async (req, res) => {
 
 
         // -------------------------------------------------
-        // 9. VERIFICAR PROFESSOR
+        // 10. VERIFICAR PROFESSOR
         // -------------------------------------------------
 
         const professor = await pool.query(`
@@ -397,7 +469,7 @@ const criarAgendamento = async (req, res) => {
 
 
         // -------------------------------------------------
-        // 10. VERIFICAR TURMA
+        // 11. VERIFICAR TURMA
         // -------------------------------------------------
 
         const turma = await pool.query(`
@@ -417,7 +489,7 @@ const criarAgendamento = async (req, res) => {
 
 
         // -------------------------------------------------
-        // 11. CRIAR AGENDAMENTO
+        // 12. CRIAR AGENDAMENTO
         // -------------------------------------------------
 
         const resultado = await pool.query(`
@@ -458,7 +530,7 @@ const criarAgendamento = async (req, res) => {
         ]);
 
 
-        console.log('✅ AGENDAMENTO CRIADO');
+        console.log('AGENDAMENTO CRIADO');
         console.log('ID:', resultado.rows[0].id);
 
         return res.status(201).json({
@@ -469,7 +541,7 @@ const criarAgendamento = async (req, res) => {
 
     } catch (erro) {
 
-        console.error('❌ ERRO AO CRIAR AGENDAMENTO');
+        console.error('ERRO AO CRIAR AGENDAMENTO');
         console.error('Mensagem:', erro.message);
         console.error('Código:', erro.code);
 
@@ -479,8 +551,17 @@ const criarAgendamento = async (req, res) => {
         });
     }
 };
+
+
+// =========================================================
+// DELETE /agendamentos/:id
+// EXCLUIR AGENDAMENTO
+// =========================================================
+
 async function excluirAgendamento(req, res, next) {
+
     try {
+
         const { id } = req.params;
 
         const resultado = await pool.query(
@@ -489,13 +570,16 @@ async function excluirAgendamento(req, res, next) {
         );
 
         if (resultado.rowCount === 0) {
+
             return res.status(404).json({
                 sucesso: false,
                 mensagem: "Agendamento não encontrado."
             });
         }
 
-        console.log(`[AGENDAMENTOS] Agendamento ${id} excluído.`);
+        console.log(
+            `[AGENDAMENTOS] Agendamento ${id} excluído.`
+        );
 
         return res.json({
             sucesso: true,
@@ -503,6 +587,7 @@ async function excluirAgendamento(req, res, next) {
         });
 
     } catch (erro) {
+
         next(erro);
     }
 }

@@ -9,7 +9,8 @@ import {
     Sun,
     Moon,
     ChevronsRight,
-    School
+    School,
+    AlertCircle
 } from "lucide-react"
 
 import "./Menu.css"
@@ -105,7 +106,7 @@ function Menu({
     }`}
     onClick={() => mudarPagina("ocorrencias")}
 >
-    <School size={20} />
+    <AlertCircle size={20} />
 
     {aberto && <span>Ocorrencias</span>}
 </button>

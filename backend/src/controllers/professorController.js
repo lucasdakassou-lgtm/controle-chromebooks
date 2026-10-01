@@ -11,11 +11,14 @@ const criarProfessor = async (req, res) => {
 
     try {
 
-        const { nome, email } = req.body;
+        const { nome } = req.body;
 
         // Validação
         if (!nome || nome.trim() === '') {
-            console.warn('⚠️ Tentativa de cadastrar professor sem nome');
+
+            console.warn(
+                '⚠️ Tentativa de cadastrar professor sem nome'
+            );
 
             return res.status(400).json({
                 sucesso: false,
@@ -23,14 +26,20 @@ const criarProfessor = async (req, res) => {
             });
         }
 
+        // Insere o professor no banco
         const resultado = await pool.query(
-            `INSERT INTO professores (nome, email)
-             VALUES ($1, $2)
-             RETURNING *`,
-            [nome.trim(), email || null]
+            `
+            INSERT INTO professores (nome)
+            VALUES ($1)
+            RETURNING *
+            `,
+            [nome.trim()]
         );
 
-        console.log('✅ Professor criado:', resultado.rows[0]);
+        console.log(
+            '✅ Professor criado:',
+            resultado.rows[0]
+        );
 
         res.status(201).json({
             sucesso: true,
@@ -48,7 +57,6 @@ const criarProfessor = async (req, res) => {
             sucesso: false,
             mensagem: 'Erro interno ao criar professor.'
         });
-
     }
 };
 
@@ -63,10 +71,16 @@ const listarProfessores = async (req, res) => {
     try {
 
         const resultado = await pool.query(
-            'SELECT * FROM professores ORDER BY nome ASC'
+            `
+            SELECT *
+            FROM professores
+            ORDER BY nome ASC
+            `
         );
 
-        console.log(`✅ ${resultado.rows.length} professores encontrados`);
+        console.log(
+            `✅ ${resultado.rows.length} professores encontrados`
+        );
 
         res.status(200).json({
             sucesso: true,
@@ -76,14 +90,19 @@ const listarProfessores = async (req, res) => {
 
     } catch (erro) {
 
-        console.error('❌ ERRO AO LISTAR PROFESSORES');
-        console.error('Mensagem:', erro.message);
+        console.error(
+            '❌ ERRO AO LISTAR PROFESSORES'
+        );
+
+        console.error(
+            'Mensagem:',
+            erro.message
+        );
 
         res.status(500).json({
             sucesso: false,
             mensagem: 'Erro ao buscar professores.'
         });
-
     }
 };
 
@@ -95,14 +114,19 @@ const buscarProfessorPorId = async (req, res) => {
 
     const { id } = req.params;
 
-    console.log(`🔍 Buscando professor ID: ${id}`);
+    console.log(
+        `🔍 Buscando professor ID: ${id}`
+    );
 
     try {
 
         // Verifica se o ID é número
         if (isNaN(id)) {
 
-            console.warn('⚠️ ID inválido recebido:', id);
+            console.warn(
+                '⚠️ ID inválido recebido:',
+                id
+            );
 
             return res.status(400).json({
                 sucesso: false,
@@ -111,13 +135,20 @@ const buscarProfessorPorId = async (req, res) => {
         }
 
         const resultado = await pool.query(
-            'SELECT * FROM professores WHERE id = $1',
+            `
+            SELECT *
+            FROM professores
+            WHERE id = $1
+            `,
             [id]
         );
 
+        // Professor não encontrado
         if (resultado.rows.length === 0) {
 
-            console.warn(`⚠️ Professor ID ${id} não encontrado`);
+            console.warn(
+                `⚠️ Professor ID ${id} não encontrado`
+            );
 
             return res.status(404).json({
                 sucesso: false,
@@ -125,7 +156,10 @@ const buscarProfessorPorId = async (req, res) => {
             });
         }
 
-        console.log('✅ Professor encontrado:', resultado.rows[0].nome);
+        console.log(
+            '✅ Professor encontrado:',
+            resultado.rows[0].nome
+        );
 
         res.status(200).json({
             sucesso: true,
@@ -134,14 +168,19 @@ const buscarProfessorPorId = async (req, res) => {
 
     } catch (erro) {
 
-        console.error('❌ ERRO AO BUSCAR PROFESSOR');
-        console.error('Mensagem:', erro.message);
+        console.error(
+            '❌ ERRO AO BUSCAR PROFESSOR'
+        );
+
+        console.error(
+            'Mensagem:',
+            erro.message
+        );
 
         res.status(500).json({
             sucesso: false,
             mensagem: 'Erro interno ao buscar professor.'
         });
-
     }
 };
 
@@ -152,37 +191,61 @@ const buscarProfessorPorId = async (req, res) => {
 const atualizarProfessor = async (req, res) => {
 
     const { id } = req.params;
-    const { nome, email } = req.body;
+    const { nome } = req.body;
 
-    console.log(`✏️ Tentativa de atualizar professor ID: ${id}`);
+    console.log(
+        `✏️ Tentativa de atualizar professor ID: ${id}`
+    );
 
     try {
 
+        // Validação do ID
         if (isNaN(id)) {
+
+            console.warn(
+                '⚠️ ID inválido recebido:',
+                id
+            );
+
             return res.status(400).json({
                 sucesso: false,
                 mensagem: 'ID inválido.'
             });
         }
 
+        // Validação do nome
         if (!nome || nome.trim() === '') {
+
+            console.warn(
+                '⚠️ Tentativa de atualizar professor sem nome'
+            );
+
             return res.status(400).json({
                 sucesso: false,
                 mensagem: 'O nome é obrigatório.'
             });
         }
 
+        // Atualiza o professor
         const resultado = await pool.query(
-            `UPDATE professores
-             SET nome = $1, email = $2
-             WHERE id = $3
-             RETURNING *`,
-            [nome.trim(), email || null, id]
+            `
+            UPDATE professores
+            SET nome = $1
+            WHERE id = $2
+            RETURNING *
+            `,
+            [
+                nome.trim(),
+                id
+            ]
         );
 
+        // Professor não encontrado
         if (resultado.rows.length === 0) {
 
-            console.warn(`⚠️ Professor ID ${id} não encontrado`);
+            console.warn(
+                `⚠️ Professor ID ${id} não encontrado`
+            );
 
             return res.status(404).json({
                 sucesso: false,
@@ -190,7 +253,10 @@ const atualizarProfessor = async (req, res) => {
             });
         }
 
-        console.log('✅ Professor atualizado:', resultado.rows[0]);
+        console.log(
+            '✅ Professor atualizado:',
+            resultado.rows[0]
+        );
 
         res.status(200).json({
             sucesso: true,
@@ -200,14 +266,24 @@ const atualizarProfessor = async (req, res) => {
 
     } catch (erro) {
 
-        console.error('❌ ERRO AO ATUALIZAR PROFESSOR');
-        console.error('Mensagem:', erro.message);
+        console.error(
+            '❌ ERRO AO ATUALIZAR PROFESSOR'
+        );
+
+        console.error(
+            'Mensagem:',
+            erro.message
+        );
+
+        console.error(
+            'Código:',
+            erro.code
+        );
 
         res.status(500).json({
             sucesso: false,
             mensagem: 'Erro interno ao atualizar professor.'
         });
-
     }
 };
 
@@ -219,25 +295,42 @@ const deletarProfessor = async (req, res) => {
 
     const { id } = req.params;
 
-    console.log(`🗑️ Tentativa de excluir professor ID: ${id}`);
+    console.log(
+        `🗑️ Tentativa de excluir professor ID: ${id}`
+    );
 
     try {
 
+        // Validação do ID
         if (isNaN(id)) {
+
+            console.warn(
+                '⚠️ ID inválido recebido:',
+                id
+            );
+
             return res.status(400).json({
                 sucesso: false,
                 mensagem: 'ID inválido.'
             });
         }
 
+        // Exclui o professor
         const resultado = await pool.query(
-            'DELETE FROM professores WHERE id = $1 RETURNING *',
+            `
+            DELETE FROM professores
+            WHERE id = $1
+            RETURNING *
+            `,
             [id]
         );
 
+        // Professor não encontrado
         if (resultado.rows.length === 0) {
 
-            console.warn(`⚠️ Professor ID ${id} não encontrado`);
+            console.warn(
+                `⚠️ Professor ID ${id} não encontrado`
+            );
 
             return res.status(404).json({
                 sucesso: false,
@@ -245,7 +338,10 @@ const deletarProfessor = async (req, res) => {
             });
         }
 
-        console.log('🗑️ Professor excluído:', resultado.rows[0]);
+        console.log(
+            '🗑️ Professor excluído:',
+            resultado.rows[0]
+        );
 
         res.status(200).json({
             sucesso: true,
@@ -255,19 +351,31 @@ const deletarProfessor = async (req, res) => {
 
     } catch (erro) {
 
-        console.error('❌ ERRO AO EXCLUIR PROFESSOR');
-        console.error('Mensagem:', erro.message);
-        console.error('Código:', erro.code);
+        console.error(
+            '❌ ERRO AO EXCLUIR PROFESSOR'
+        );
+
+        console.error(
+            'Mensagem:',
+            erro.message
+        );
+
+        console.error(
+            'Código:',
+            erro.code
+        );
 
         res.status(500).json({
             sucesso: false,
             mensagem: 'Erro interno ao excluir professor.'
         });
-
     }
 };
 
 
+// ==============================
+// EXPORTA OS CONTROLLERS
+// ==============================
 module.exports = {
     criarProfessor,
     listarProfessores,

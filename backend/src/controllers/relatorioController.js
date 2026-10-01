@@ -1,4 +1,3 @@
-
 const pool = require("../database/database");
 
 // ==========================================
@@ -6,7 +5,6 @@ const pool = require("../database/database");
 // ==========================================
 
 function obterFiltroPeriodo(req, campo) {
-
     const { data_inicio, data_fim } = req.query;
 
     const filtros = [];
@@ -14,12 +12,18 @@ function obterFiltroPeriodo(req, campo) {
 
     if (data_inicio) {
         valores.push(data_inicio);
-        filtros.push(`${campo} >= $${valores.length}`);
+
+        filtros.push(
+            `${campo} >= $${valores.length}`
+        );
     }
 
     if (data_fim) {
         valores.push(data_fim);
-        filtros.push(`${campo} < ($${valores.length}::date + INTERVAL '1 day')`);
+
+        filtros.push(
+            `${campo} < ($${valores.length}::date + INTERVAL '1 day')`
+        );
     }
 
     return {
@@ -28,17 +32,36 @@ function obterFiltroPeriodo(req, campo) {
     };
 }
 
+
 // ==========================================
 // RESUMO GERAL
 // ==========================================
+
 const obterResumo = async (req, res) => {
     try {
+        const filtroEmprestimos = obterFiltroPeriodo(
+            req,
+            "data_retirada"
+        );
+
+        const filtroOcorrencias = obterFiltroPeriodo(
+            req,
+            "data_abertura"
+        );
 
         // Total de empréstimos realizados
-        const totalEmprestimos = await pool.query(`
-            SELECT COUNT(*) AS total
-            FROM emprestimos
-        `);
+        const totalEmprestimos = await pool.query(
+            `
+                SELECT COUNT(*) AS total
+                FROM emprestimos
+                ${
+                    filtroEmprestimos.filtros.length
+                        ? `WHERE ${filtroEmprestimos.filtros.join(" AND ")}`
+                        : ""
+                }
+            `,
+            filtroEmprestimos.valores
+        );
 
 
         // Chromebooks atualmente emprestados
@@ -50,37 +73,69 @@ const obterResumo = async (req, res) => {
 
 
         // Total de ocorrências
-        const totalOcorrencias = await pool.query(`
-            SELECT COUNT(*) AS total
-            FROM ocorrencias
-        `);
+        const totalOcorrencias = await pool.query(
+            `
+                SELECT COUNT(*) AS total
+                FROM ocorrencias
+                ${
+                    filtroOcorrencias.filtros.length
+                        ? `WHERE ${filtroOcorrencias.filtros.join(" AND ")}`
+                        : ""
+                }
+            `,
+            filtroOcorrencias.valores
+        );
 
 
         // Ocorrências abertas
-        const ocorrenciasAbertas = await pool.query(`
-            SELECT COUNT(*) AS total
-            FROM ocorrencias
-            WHERE status = 'ABERTA'
-        `);
+        const ocorrenciasAbertas = await pool.query(
+            `
+                SELECT COUNT(*) AS total
+                FROM ocorrencias
+                WHERE status = 'ABERTA'
+                ${
+                    filtroOcorrencias.filtros.length
+                        ? `AND ${filtroOcorrencias.filtros.join(" AND ")}`
+                        : ""
+                }
+            `,
+            filtroOcorrencias.valores
+        );
 
 
         // Ocorrências em andamento
-        const ocorrenciasAndamento = await pool.query(`
-            SELECT COUNT(*) AS total
-            FROM ocorrencias
-            WHERE status = 'EM_ANDAMENTO'
-        `);
+        const ocorrenciasAndamento = await pool.query(
+            `
+                SELECT COUNT(*) AS total
+                FROM ocorrencias
+                WHERE status = 'EM_ANDAMENTO'
+                ${
+                    filtroOcorrencias.filtros.length
+                        ? `AND ${filtroOcorrencias.filtros.join(" AND ")}`
+                        : ""
+                }
+            `,
+            filtroOcorrencias.valores
+        );
 
 
         // Ocorrências resolvidas
-        const ocorrenciasResolvidas = await pool.query(`
-            SELECT COUNT(*) AS total
-            FROM ocorrencias
-            WHERE status = 'RESOLVIDA'
-        `);
+        const ocorrenciasResolvidas = await pool.query(
+            `
+                SELECT COUNT(*) AS total
+                FROM ocorrencias
+                WHERE status = 'RESOLVIDA'
+                ${
+                    filtroOcorrencias.filtros.length
+                        ? `AND ${filtroOcorrencias.filtros.join(" AND ")}`
+                        : ""
+                }
+            `,
+            filtroOcorrencias.valores
+        );
 
 
-        // Total de Chromebooks configurado no sistema
+        // Total de Chromebooks configurado
         const configuracao = await pool.query(`
             SELECT total_chromebooks
             FROM configuracoes
@@ -98,7 +153,10 @@ const obterResumo = async (req, res) => {
         );
 
 
-        const disponiveis = totalChromebooks - emprestados;
+        const disponiveis = Math.max(
+            totalChromebooks - emprestados,
+            0
+        );
 
 
         res.status(200).json({
@@ -134,7 +192,6 @@ const obterResumo = async (req, res) => {
         });
 
     } catch (erro) {
-
         console.error(
             "[RELATORIOS] Erro ao gerar resumo:",
             erro
@@ -152,59 +209,50 @@ const obterResumo = async (req, res) => {
 // RANKING DE PROFESSORES
 // QUEM MAIS PEGA CHROMEBOOKS
 // ==========================================
+
 const rankingProfessores = async (req, res) => {
-
     try {
+        const filtro = obterFiltroPeriodo(
+            req,
+            "emprestimos.data_retirada"
+        );
 
-        const { data_inicio, data_fim } = req.query;
-
-        const filtros = [];
-        const valores = [];
-
-        if (data_inicio) {
-            valores.push(data_inicio);
-            filtros.push(
-                `emprestimos.data_retirada >= $${valores.length}`
-            );
-        }
-
-        if (data_fim) {
-            valores.push(data_fim);
-            filtros.push(
-                `emprestimos.data_retirada < ($${valores.length}::date + INTERVAL '1 day')`
-            );
-        }
-
-        const filtroJoin = filtros.length
-            ? `AND ${filtros.join(" AND ")}`
+        const filtroJoin = filtro.filtros.length
+            ? `AND ${filtro.filtros.join(" AND ")}`
             : "";
 
-        const resultado = await pool.query(`
-            SELECT
-                professores.id,
-                professores.nome,
+        const resultado = await pool.query(
+            `
+                SELECT
+                    professores.id,
+                    professores.nome,
 
-                COUNT(emprestimos.id) AS total_emprestimos,
+                    COUNT(emprestimos.id)
+                        AS total_emprestimos,
 
-                COALESCE(
-                    SUM(emprestimos.quantidade),
-                    0
-                ) AS total_chromebooks
+                    COALESCE(
+                        SUM(emprestimos.quantidade),
+                        0
+                    ) AS total_chromebooks
 
-            FROM professores
+                FROM professores
 
-            LEFT JOIN emprestimos
-                ON emprestimos.professor_id = professores.id
-                ${filtroJoin}
+                LEFT JOIN emprestimos
+                    ON emprestimos.professor_id = professores.id
+                    ${filtroJoin}
 
-            GROUP BY
-                professores.id,
-                professores.nome
+                GROUP BY
+                    professores.id,
+                    professores.nome
 
-            ORDER BY
-                total_chromebooks DESC,
-                total_emprestimos DESC
-        `, valores);
+                ORDER BY
+                    total_chromebooks DESC,
+                    total_emprestimos DESC,
+                    professores.nome ASC
+            `,
+            filtro.valores
+        );
+
 
         res.status(200).json({
             sucesso: true,
@@ -212,7 +260,6 @@ const rankingProfessores = async (req, res) => {
         });
 
     } catch (erro) {
-
         console.error(
             "[RELATORIOS] Erro no ranking de professores:",
             erro
@@ -225,32 +272,49 @@ const rankingProfessores = async (req, res) => {
         });
     }
 };
+
+
 // ==========================================
 // RANKING DE PROFESSORES
 // QUEM MAIS AGENDA SALAS
 // ==========================================
+
 const rankingAgendamentosProfessores = async (req, res) => {
     try {
+        const filtro = obterFiltroPeriodo(
+            req,
+            "agendamentos.data"
+        );
 
-        const resultado = await pool.query(`
-            SELECT
-                professores.id,
-                professores.nome,
+        const filtroJoin = filtro.filtros.length
+            ? `AND ${filtro.filtros.join(" AND ")}`
+            : "";
 
-                COUNT(agendamentos.id) AS total_agendamentos
+        const resultado = await pool.query(
+            `
+                SELECT
+                    professores.id,
+                    professores.nome,
 
-            FROM professores
+                    COUNT(agendamentos.id)
+                        AS total_agendamentos
 
-            LEFT JOIN agendamentos
-                ON agendamentos.professor_id = professores.id
+                FROM professores
 
-            GROUP BY
-                professores.id,
-                professores.nome
+                LEFT JOIN agendamentos
+                    ON agendamentos.professor_id = professores.id
+                    ${filtroJoin}
 
-            ORDER BY
-                total_agendamentos DESC
-        `);
+                GROUP BY
+                    professores.id,
+                    professores.nome
+
+                ORDER BY
+                    total_agendamentos DESC,
+                    professores.nome ASC
+            `,
+            filtro.valores
+        );
 
 
         res.status(200).json({
@@ -259,16 +323,15 @@ const rankingAgendamentosProfessores = async (req, res) => {
         });
 
     } catch (erro) {
-
         console.error(
-            "[RELATORIOS] Erro ao gerar ranking de agendamentos:",
+            "[RELATORIOS] Erro no ranking de agendamentos por professor:",
             erro
         );
 
         res.status(500).json({
             sucesso: false,
             mensagem:
-                "Erro ao gerar ranking de professores por agendamento."
+                "Erro ao gerar ranking de agendamentos por professor."
         });
     }
 };
@@ -277,48 +340,38 @@ const rankingAgendamentosProfessores = async (req, res) => {
 // ==========================================
 // SALAS COM MAIS OCORRÊNCIAS
 // ==========================================
+
 const ocorrenciasPorSala = async (req, res) => {
-
     try {
+        const filtro = obterFiltroPeriodo(
+            req,
+            "data_abertura"
+        );
 
-        const { data_inicio, data_fim } = req.query;
-
-        const filtros = [];
-        const valores = [];
-
-        if (data_inicio) {
-            valores.push(data_inicio);
-
-            filtros.push(
-                `data_abertura >= $${valores.length}`
-            );
-        }
-
-        if (data_fim) {
-            valores.push(data_fim);
-
-            filtros.push(
-                `data_abertura < ($${valores.length}::date + INTERVAL '1 day')`
-            );
-        }
-
-        const where = filtros.length
-            ? `WHERE ${filtros.join(" AND ")}`
+        const where = filtro.filtros.length
+            ? `WHERE ${filtro.filtros.join(" AND ")}`
             : "";
 
-        const resultado = await pool.query(`
-            SELECT
-                sala,
-                COUNT(*) AS total_ocorrencias
+        const resultado = await pool.query(
+            `
+                SELECT
+                    sala,
+                    COUNT(*) AS total_ocorrencias
 
-            FROM ocorrencias
+                FROM ocorrencias
 
-            ${where}
+                ${where}
 
-            GROUP BY sala
+                GROUP BY
+                    sala
 
-            ORDER BY total_ocorrencias DESC
-        `, valores);
+                ORDER BY
+                    total_ocorrencias DESC,
+                    sala ASC
+            `,
+            filtro.valores
+        );
+
 
         res.status(200).json({
             sucesso: true,
@@ -326,7 +379,6 @@ const ocorrenciasPorSala = async (req, res) => {
         });
 
     } catch (erro) {
-
         console.error(
             "[RELATORIOS] Erro nas ocorrências por sala:",
             erro
@@ -339,31 +391,48 @@ const ocorrenciasPorSala = async (req, res) => {
         });
     }
 };
+
+
 // ==========================================
 // PROFESSORES COM MAIS OCORRÊNCIAS
 // ==========================================
+
 const ocorrenciasPorProfessor = async (req, res) => {
     try {
+        const filtro = obterFiltroPeriodo(
+            req,
+            "ocorrencias.data_abertura"
+        );
 
-        const resultado = await pool.query(`
-            SELECT
-                professores.id,
-                professores.nome,
+        const filtroJoin = filtro.filtros.length
+            ? `AND ${filtro.filtros.join(" AND ")}`
+            : "";
 
-                COUNT(ocorrencias.id) AS total_ocorrencias
+        const resultado = await pool.query(
+            `
+                SELECT
+                    professores.id,
+                    professores.nome,
 
-            FROM professores
+                    COUNT(ocorrencias.id)
+                        AS total_ocorrencias
 
-            LEFT JOIN ocorrencias
-                ON ocorrencias.professor_id = professores.id
+                FROM professores
 
-            GROUP BY
-                professores.id,
-                professores.nome
+                LEFT JOIN ocorrencias
+                    ON ocorrencias.professor_id = professores.id
+                    ${filtroJoin}
 
-            ORDER BY
-                total_ocorrencias DESC
-        `);
+                GROUP BY
+                    professores.id,
+                    professores.nome
+
+                ORDER BY
+                    total_ocorrencias DESC,
+                    professores.nome ASC
+            `,
+            filtro.valores
+        );
 
 
         res.status(200).json({
@@ -372,9 +441,8 @@ const ocorrenciasPorProfessor = async (req, res) => {
         });
 
     } catch (erro) {
-
         console.error(
-            "[RELATORIOS] Erro ao gerar ocorrências por professor:",
+            "[RELATORIOS] Erro nas ocorrências por professor:",
             erro
         );
 
@@ -391,48 +459,38 @@ const ocorrenciasPorProfessor = async (req, res) => {
 // OCORRÊNCIAS POR TIPO
 // PRINCIPAIS MOTIVOS
 // ==========================================
+
 const ocorrenciasPorTipo = async (req, res) => {
-
     try {
+        const filtro = obterFiltroPeriodo(
+            req,
+            "data_abertura"
+        );
 
-        const { data_inicio, data_fim } = req.query;
-
-        const filtros = [];
-        const valores = [];
-
-        if (data_inicio) {
-            valores.push(data_inicio);
-
-            filtros.push(
-                `data_abertura >= $${valores.length}`
-            );
-        }
-
-        if (data_fim) {
-            valores.push(data_fim);
-
-            filtros.push(
-                `data_abertura < ($${valores.length}::date + INTERVAL '1 day')`
-            );
-        }
-
-        const where = filtros.length
-            ? `WHERE ${filtros.join(" AND ")}`
+        const where = filtro.filtros.length
+            ? `WHERE ${filtro.filtros.join(" AND ")}`
             : "";
 
-        const resultado = await pool.query(`
-            SELECT
-                tipo,
-                COUNT(*) AS total_ocorrencias
+        const resultado = await pool.query(
+            `
+                SELECT
+                    tipo,
+                    COUNT(*) AS total_ocorrencias
 
-            FROM ocorrencias
+                FROM ocorrencias
 
-            ${where}
+                ${where}
 
-            GROUP BY tipo
+                GROUP BY
+                    tipo
 
-            ORDER BY total_ocorrencias DESC
-        `, valores);
+                ORDER BY
+                    total_ocorrencias DESC,
+                    tipo ASC
+            `,
+            filtro.valores
+        );
+
 
         res.status(200).json({
             sucesso: true,
@@ -440,7 +498,6 @@ const ocorrenciasPorTipo = async (req, res) => {
         });
 
     } catch (erro) {
-
         console.error(
             "[RELATORIOS] Erro nas ocorrências por tipo:",
             erro
@@ -458,58 +515,44 @@ const ocorrenciasPorTipo = async (req, res) => {
 // ==========================================
 // OCORRÊNCIAS POR MÊS
 // ==========================================
+
 const ocorrenciasPorMes = async (req, res) => {
-
     try {
+        const filtro = obterFiltroPeriodo(
+            req,
+            "data_abertura"
+        );
 
-        const { data_inicio, data_fim } = req.query;
-
-        const filtros = [];
-        const valores = [];
-
-        if (data_inicio) {
-            valores.push(data_inicio);
-
-            filtros.push(
-                `data_abertura >= $${valores.length}`
-            );
-        }
-
-        if (data_fim) {
-            valores.push(data_fim);
-
-            filtros.push(
-                `data_abertura < ($${valores.length}::date + INTERVAL '1 day')`
-            );
-        }
-
-        const where = filtros.length
-            ? `WHERE ${filtros.join(" AND ")}`
+        const where = filtro.filtros.length
+            ? `WHERE ${filtro.filtros.join(" AND ")}`
             : "";
 
-        const resultado = await pool.query(`
-            SELECT
+        const resultado = await pool.query(
+            `
+                SELECT
+                    TO_CHAR(
+                        data_abertura,
+                        'YYYY-MM'
+                    ) AS mes,
 
-                TO_CHAR(
-                    data_abertura,
-                    'MM/YYYY'
-                ) AS mes,
+                    COUNT(*) AS total_ocorrencias
 
-                COUNT(*) AS total_ocorrencias
+                FROM ocorrencias
 
-            FROM ocorrencias
+                ${where}
 
-            ${where}
+                GROUP BY
+                    TO_CHAR(
+                        data_abertura,
+                        'YYYY-MM'
+                    )
 
-            GROUP BY
-                TO_CHAR(
-                    data_abertura,
-                    'MM/YYYY'
-                )
+                ORDER BY
+                    MIN(data_abertura)
+            `,
+            filtro.valores
+        );
 
-            ORDER BY
-                MIN(data_abertura)
-        `, valores);
 
         res.status(200).json({
             sucesso: true,
@@ -517,7 +560,6 @@ const ocorrenciasPorMes = async (req, res) => {
         });
 
     } catch (erro) {
-
         console.error(
             "[RELATORIOS] Erro na evolução mensal:",
             erro
@@ -531,23 +573,41 @@ const ocorrenciasPorMes = async (req, res) => {
     }
 };
 
+
 // ==========================================
 // AGENDAMENTOS POR SALA
 // ==========================================
+
 const agendamentosPorSala = async (req, res) => {
     try {
+        const filtro = obterFiltroPeriodo(
+            req,
+            "data"
+        );
 
-        const resultado = await pool.query(`
-            SELECT
-                sala,
-                COUNT(*) AS total_agendamentos
+        const where = filtro.filtros.length
+            ? `WHERE ${filtro.filtros.join(" AND ")}`
+            : "";
 
-            FROM agendamentos
+        const resultado = await pool.query(
+            `
+                SELECT
+                    sala,
+                    COUNT(*) AS total_agendamentos
 
-            GROUP BY sala
+                FROM agendamentos
 
-            ORDER BY total_agendamentos DESC
-        `);
+                ${where}
+
+                GROUP BY
+                    sala
+
+                ORDER BY
+                    total_agendamentos DESC,
+                    sala ASC
+            `,
+            filtro.valores
+        );
 
 
         res.status(200).json({
@@ -556,7 +616,6 @@ const agendamentosPorSala = async (req, res) => {
         });
 
     } catch (erro) {
-
         console.error(
             "[RELATORIOS] Erro ao gerar agendamentos por sala:",
             erro
@@ -574,28 +633,43 @@ const agendamentosPorSala = async (req, res) => {
 // ==========================================
 // AGENDAMENTOS POR TURMA
 // ==========================================
+
 const agendamentosPorTurma = async (req, res) => {
     try {
+        const filtro = obterFiltroPeriodo(
+            req,
+            "agendamentos.data"
+        );
 
-        const resultado = await pool.query(`
-            SELECT
-                turmas.id,
-                turmas.nome,
+        const filtroJoin = filtro.filtros.length
+            ? `AND ${filtro.filtros.join(" AND ")}`
+            : "";
 
-                COUNT(agendamentos.id) AS total_agendamentos
+        const resultado = await pool.query(
+            `
+                SELECT
+                    turmas.id,
+                    turmas.nome,
 
-            FROM turmas
+                    COUNT(agendamentos.id)
+                        AS total_agendamentos
 
-            LEFT JOIN agendamentos
-                ON agendamentos.turma_id = turmas.id
+                FROM turmas
 
-            GROUP BY
-                turmas.id,
-                turmas.nome
+                LEFT JOIN agendamentos
+                    ON agendamentos.turma_id = turmas.id
+                    ${filtroJoin}
 
-            ORDER BY
-                total_agendamentos DESC
-        `);
+                GROUP BY
+                    turmas.id,
+                    turmas.nome
+
+                ORDER BY
+                    total_agendamentos DESC,
+                    turmas.nome ASC
+            `,
+            filtro.valores
+        );
 
 
         res.status(200).json({
@@ -604,7 +678,6 @@ const agendamentosPorTurma = async (req, res) => {
         });
 
     } catch (erro) {
-
         console.error(
             "[RELATORIOS] Erro ao gerar agendamentos por turma:",
             erro
@@ -622,33 +695,49 @@ const agendamentosPorTurma = async (req, res) => {
 // ==========================================
 // EMPRÉSTIMOS POR TURMA
 // ==========================================
+
 const emprestimosPorTurma = async (req, res) => {
     try {
+        const filtro = obterFiltroPeriodo(
+            req,
+            "emprestimos.data_retirada"
+        );
 
-        const resultado = await pool.query(`
-            SELECT
-                turmas.id,
-                turmas.nome,
+        const filtroJoin = filtro.filtros.length
+            ? `AND ${filtro.filtros.join(" AND ")}`
+            : "";
 
-                COUNT(emprestimos.id) AS total_emprestimos,
+        const resultado = await pool.query(
+            `
+                SELECT
+                    turmas.id,
+                    turmas.nome,
 
-                COALESCE(
-                    SUM(emprestimos.quantidade),
-                    0
-                ) AS total_chromebooks
+                    COUNT(emprestimos.id)
+                        AS total_emprestimos,
 
-            FROM turmas
+                    COALESCE(
+                        SUM(emprestimos.quantidade),
+                        0
+                    ) AS total_chromebooks
 
-            LEFT JOIN emprestimos
-                ON emprestimos.turma_id = turmas.id
+                FROM turmas
 
-            GROUP BY
-                turmas.id,
-                turmas.nome
+                LEFT JOIN emprestimos
+                    ON emprestimos.turma_id = turmas.id
+                    ${filtroJoin}
 
-            ORDER BY
-                total_chromebooks DESC
-        `);
+                GROUP BY
+                    turmas.id,
+                    turmas.nome
+
+                ORDER BY
+                    total_chromebooks DESC,
+                    total_emprestimos DESC,
+                    turmas.nome ASC
+            `,
+            filtro.valores
+        );
 
 
         res.status(200).json({
@@ -657,7 +746,6 @@ const emprestimosPorTurma = async (req, res) => {
         });
 
     } catch (erro) {
-
         console.error(
             "[RELATORIOS] Erro ao gerar empréstimos por turma:",
             erro
@@ -675,24 +763,38 @@ const emprestimosPorTurma = async (req, res) => {
 // ==========================================
 // RESUMO DE AGENDAMENTOS
 // ==========================================
+
 const resumoAgendamentos = async (req, res) => {
     try {
+        const filtro = obterFiltroPeriodo(
+            req,
+            "data"
+        );
 
-        const resultado = await pool.query(`
-            SELECT
+        const where = filtro.filtros.length
+            ? `WHERE ${filtro.filtros.join(" AND ")}`
+            : "";
 
-                COUNT(*) AS total_agendamentos,
+        const resultado = await pool.query(
+            `
+                SELECT
 
-                COUNT(*) FILTER (
-                    WHERE status = 'AGENDADO'
-                ) AS agendamentos_ativos,
+                    COUNT(*) AS total_agendamentos,
 
-                COUNT(*) FILTER (
-                    WHERE status <> 'AGENDADO'
-                ) AS outros_status
+                    COUNT(*) FILTER (
+                        WHERE status = 'AGENDADO'
+                    ) AS agendamentos_ativos,
 
-            FROM agendamentos
-        `);
+                    COUNT(*) FILTER (
+                        WHERE status <> 'AGENDADO'
+                    ) AS outros_status
+
+                FROM agendamentos
+
+                ${where}
+            `,
+            filtro.valores
+        );
 
 
         res.status(200).json({
@@ -701,7 +803,6 @@ const resumoAgendamentos = async (req, res) => {
         });
 
     } catch (erro) {
-
         console.error(
             "[RELATORIOS] Erro ao gerar resumo de agendamentos:",
             erro
@@ -719,28 +820,17 @@ const resumoAgendamentos = async (req, res) => {
 // ==========================================
 // EXPORTAÇÃO
 // ==========================================
+
 module.exports = {
-
     obterResumo,
-
     rankingProfessores,
-
     rankingAgendamentosProfessores,
-
     ocorrenciasPorSala,
-
     ocorrenciasPorProfessor,
-
     ocorrenciasPorTipo,
-
     ocorrenciasPorMes,
-
     agendamentosPorSala,
-
     agendamentosPorTurma,
-
     emprestimosPorTurma,
-
     resumoAgendamentos
-
 };

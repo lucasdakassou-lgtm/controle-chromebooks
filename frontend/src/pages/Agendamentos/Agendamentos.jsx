@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react"
+
 import {
     CalendarDays,
     Plus,
@@ -35,6 +36,7 @@ const AULAS = [
     { numero: 9, inicio: "15:50", fim: "16:40" }
 ]
 
+
 function Agendamentos() {
 
     const [agendamentos, setAgendamentos] = useState([])
@@ -58,30 +60,120 @@ function Agendamentos() {
     const [observacao, setObservacao] = useState("")
 
     const [salvando, setSalvando] = useState(false)
-async function excluirAgendamento(id) {
-    const confirmar = window.confirm(
-        "Tem certeza que deseja excluir este agendamento?"
-    );
 
-    if (!confirmar) {
-        return;
+
+    // =====================================================
+    // DATA ATUAL DO COMPUTADOR
+    // =====================================================
+
+    const obterDataHoje = () => {
+
+        const agora = new Date()
+
+        const ano = agora.getFullYear()
+        const mes = String(
+            agora.getMonth() + 1
+        ).padStart(2, "0")
+
+        const dia = String(
+            agora.getDate()
+        ).padStart(2, "0")
+
+        return `${ano}-${mes}-${dia}`
     }
 
-    try {
-        await api.delete(`/agendamentos/${id}`);
 
-        console.log("[AGENDAMENTOS] Agendamento excluído:", id);
+    // =====================================================
+    // HORA ATUAL DO COMPUTADOR
+    // =====================================================
 
-        carregarDados();
-    } catch (erro) {
-        console.error("[AGENDAMENTOS] Erro ao excluir:", erro);
+    const obterHoraAtual = () => {
 
-        alert(
-            erro.response?.data?.mensagem ||
-            "Não foi possível excluir o agendamento."
-        );
+        const agora = new Date()
+
+        const horas = String(
+            agora.getHours()
+        ).padStart(2, "0")
+
+        const minutos = String(
+            agora.getMinutes()
+        ).padStart(2, "0")
+
+        return `${horas}:${minutos}`
     }
-}
+
+
+    // =====================================================
+    // AULAS DISPONÍVEIS PARA A DATA SELECIONADA
+    // =====================================================
+
+    const obterAulasDisponiveis = () => {
+
+        if (!dataSelecionada) {
+            return AULAS
+        }
+
+        const hoje = obterDataHoje()
+
+        // Data passada
+        if (dataSelecionada < hoje) {
+            return []
+        }
+
+        // Data futura
+        if (dataSelecionada > hoje) {
+            return AULAS
+        }
+
+        // Hoje
+        const horaAtual = obterHoraAtual()
+
+        return AULAS.filter(
+            (aula) => aula.inicio > horaAtual
+        )
+    }
+
+
+    // =====================================================
+    // EXCLUIR AGENDAMENTO
+    // =====================================================
+
+    async function excluirAgendamento(id) {
+
+        const confirmar = window.confirm(
+            "Tem certeza que deseja excluir este agendamento?"
+        )
+
+        if (!confirmar) {
+            return
+        }
+
+        try {
+
+            await api.delete(
+                `/agendamentos/${id}`
+            )
+
+            console.log(
+                "[AGENDAMENTOS] Agendamento excluído:",
+                id
+            )
+
+            carregarDados()
+
+        } catch (erro) {
+
+            console.error(
+                "[AGENDAMENTOS] Erro ao excluir:",
+                erro
+            )
+
+            alert(
+                erro.response?.data?.mensagem ||
+                "Não foi possível excluir o agendamento."
+            )
+        }
+    }
 
 
     // =====================================================
@@ -95,7 +187,9 @@ async function excluirAgendamento(id) {
             setCarregando(true)
             setErro("")
 
-            console.log("[Agendamentos] Carregando dados...")
+            console.log(
+                "[Agendamentos] Carregando dados..."
+            )
 
             const [
                 agendamentosResposta,
@@ -107,9 +201,14 @@ async function excluirAgendamento(id) {
                 api.get("/turmas")
             ])
 
-            const agendamentosDados = agendamentosResposta.data
-            const professoresDados = professoresResposta.data
-            const turmasDados = turmasResposta.data
+            const agendamentosDados =
+                agendamentosResposta.data
+
+            const professoresDados =
+                professoresResposta.data
+
+            const turmasDados =
+                turmasResposta.data
 
             const listaAgendamentos =
                 agendamentosDados.agendamentos || []
@@ -124,9 +223,17 @@ async function excluirAgendamento(id) {
                     ? turmasDados
                     : turmasDados.turmas || []
 
-            setAgendamentos(listaAgendamentos)
-            setProfessores(listaProfessores)
-            setTurmas(listaTurmas)
+            setAgendamentos(
+                listaAgendamentos
+            )
+
+            setProfessores(
+                listaProfessores
+            )
+
+            setTurmas(
+                listaTurmas
+            )
 
             console.log(
                 "[Agendamentos] Agendamentos:",
@@ -152,8 +259,51 @@ async function excluirAgendamento(id) {
 
 
     useEffect(() => {
+
         carregarDados()
+
     }, [])
+
+
+    // =====================================================
+    // ALTERAR DATA DO AGENDAMENTO
+    // =====================================================
+
+    const alterarDataSelecionada = (novaData) => {
+
+        setDataSelecionada(novaData)
+
+        const hoje = obterDataHoje()
+
+        // Se a data for passada, limpa a aula
+        if (novaData < hoje) {
+
+            setAulaSelecionada("")
+
+            return
+        }
+
+        // Verifica se a aula atualmente selecionada
+        // ainda está disponível
+        const aulasDisponiveis =
+            novaData === hoje
+                ? AULAS.filter(
+                    (aula) =>
+                        aula.inicio > obterHoraAtual()
+                )
+                : AULAS
+
+        const aulaAindaDisponivel =
+            aulasDisponiveis.some(
+                (aula) =>
+                    String(aula.numero) ===
+                    String(aulaSelecionada)
+            )
+
+        if (!aulaAindaDisponivel) {
+            setAulaSelecionada("")
+        }
+    }
 
 
     // =====================================================
@@ -179,6 +329,47 @@ async function excluirAgendamento(id) {
             return
         }
 
+
+        // -------------------------------------------------
+        // VALIDAÇÃO NO FRONTEND
+        // -------------------------------------------------
+
+        const hoje = obterDataHoje()
+
+        if (dataSelecionada < hoje) {
+
+            setErro(
+                "Não é possível realizar agendamentos para datas passadas."
+            )
+
+            return
+        }
+
+
+        if (dataSelecionada === hoje) {
+
+            const aulaSelecionadaDados =
+                AULAS.find(
+                    (aula) =>
+                        aula.numero ===
+                        Number(aulaSelecionada)
+                )
+
+            if (
+                aulaSelecionadaDados &&
+                aulaSelecionadaDados.inicio <=
+                obterHoraAtual()
+            ) {
+
+                setErro(
+                    `A ${aulaSelecionada}ª aula já começou. Selecione uma aula futura.`
+                )
+
+                return
+            }
+        }
+
+
         try {
 
             setSalvando(true)
@@ -188,14 +379,28 @@ async function excluirAgendamento(id) {
                 "[Agendamentos] Criando agendamento..."
             )
 
-            await api.post("/agendamentos", {
-                professor_id: Number(professorSelecionado),
-                turma_id: Number(turmaSelecionada),
-                data: dataSelecionada,
-                sala: salaSelecionada,
-                aula: Number(aulaSelecionada),
-                observacao: observacao.trim() || null
-            })
+            await api.post(
+                "/agendamentos",
+                {
+                    professor_id:
+                        Number(professorSelecionado),
+
+                    turma_id:
+                        Number(turmaSelecionada),
+
+                    data:
+                        dataSelecionada,
+
+                    sala:
+                        salaSelecionada,
+
+                    aula:
+                        Number(aulaSelecionada),
+
+                    observacao:
+                        observacao.trim() || null
+                }
+            )
 
             console.log(
                 "[Agendamentos] Agendamento criado."
@@ -248,7 +453,8 @@ async function excluirAgendamento(id) {
     const agendamentosFiltrados =
         agendamentos.filter((agendamento) => {
 
-            const textoBusca = busca.toLowerCase()
+            const textoBusca =
+                busca.toLowerCase()
 
             const correspondeBusca =
                 agendamento.professor
@@ -265,7 +471,9 @@ async function excluirAgendamento(id) {
 
             const correspondeData =
                 !dataFiltro ||
-                String(agendamento.data).slice(0, 10) === dataFiltro
+                String(
+                    agendamento.data
+                ).slice(0, 10) === dataFiltro
 
             const correspondeSala =
                 !salaFiltro ||
@@ -289,9 +497,10 @@ async function excluirAgendamento(id) {
             return "-"
         }
 
-        const partes = String(data)
-            .slice(0, 10)
-            .split("-")
+        const partes =
+            String(data)
+                .slice(0, 10)
+                .split("-")
 
         if (partes.length !== 3) {
             return data
@@ -307,9 +516,12 @@ async function excluirAgendamento(id) {
 
     const obterNomeAula = (numero) => {
 
-        const aula = AULAS.find(
-            (item) => item.numero === Number(numero)
-        )
+        const aula =
+            AULAS.find(
+                (item) =>
+                    item.numero ===
+                    Number(numero)
+            )
 
         if (!aula) {
             return "-"
@@ -325,9 +537,12 @@ async function excluirAgendamento(id) {
 
     const obterHorarioAula = (numero) => {
 
-        const aula = AULAS.find(
-            (item) => item.numero === Number(numero)
-        )
+        const aula =
+            AULAS.find(
+                (item) =>
+                    item.numero ===
+                    Number(numero)
+            )
 
         if (!aula) {
             return "-"
@@ -337,12 +552,17 @@ async function excluirAgendamento(id) {
     }
 
 
+    const aulasDisponiveis =
+        obterAulasDisponiveis()
+
+
     return (
         <div className="pagina-agendamentos">
 
             <header className="cabecalho-agendamentos">
 
                 <div>
+
                     <div className="titulo-pagina">
 
                         <div className="icone-titulo">
@@ -350,25 +570,37 @@ async function excluirAgendamento(id) {
                         </div>
 
                         <div>
-                            <h1>Agendamentos</h1>
+
+                            <h1>
+                                Agendamentos
+                            </h1>
 
                             <p>
                                 Gerencie reservas de salas e laboratórios.
                             </p>
+
                         </div>
+
                     </div>
+
                 </div>
+
 
                 <button
                     type="button"
                     className="botao-novo-agendamento"
                     onClick={() => {
+
                         setErro("")
                         setModalAberto(true)
+
                     }}
                 >
+
                     <Plus size={18} />
+
                     Novo agendamento
+
                 </button>
 
             </header>
@@ -389,7 +621,9 @@ async function excluirAgendamento(id) {
                         placeholder="Buscar professor, turma ou sala..."
                         value={busca}
                         onChange={(evento) =>
-                            setBusca(evento.target.value)
+                            setBusca(
+                                evento.target.value
+                            )
                         }
                     />
 
@@ -404,7 +638,9 @@ async function excluirAgendamento(id) {
                         type="date"
                         value={dataFiltro}
                         onChange={(evento) =>
-                            setDataFiltro(evento.target.value)
+                            setDataFiltro(
+                                evento.target.value
+                            )
                         }
                     />
 
@@ -418,20 +654,25 @@ async function excluirAgendamento(id) {
                     <select
                         value={salaFiltro}
                         onChange={(evento) =>
-                            setSalaFiltro(evento.target.value)
+                            setSalaFiltro(
+                                evento.target.value
+                            )
                         }
                     >
+
                         <option value="">
                             Todas as salas
                         </option>
 
                         {SALAS.map((sala) => (
+
                             <option
                                 key={sala}
                                 value={sala}
                             >
                                 {sala}
                             </option>
+
                         ))}
 
                     </select>
@@ -446,11 +687,12 @@ async function excluirAgendamento(id) {
             ================================================= */}
 
             {erro && (
+
                 <div className="mensagem-erro-agendamento">
                     {erro}
                 </div>
+
             )}
-            
 
 
             {/* =================================================
@@ -490,55 +732,76 @@ async function excluirAgendamento(id) {
                             <thead>
 
                                 <tr>
+
                                     <th>Data</th>
                                     <th>Horário</th>
                                     <th>Sala</th>
                                     <th>Professor</th>
                                     <th>Turma</th>
                                     <th>Status</th>
+                                    <th></th>
+
                                 </tr>
 
                             </thead>
+
 
                             <tbody>
 
                                 {agendamentosFiltrados.map(
                                     (agendamento) => (
 
-                                        <tr key={agendamento.id}>
+                                        <tr
+                                            key={
+                                                agendamento.id
+                                            }
+                                        >
 
                                             <td>
+
                                                 {formatarData(
                                                     agendamento.data
                                                 )}
+
                                             </td>
+
 
                                             <td>
 
                                                 <div className="horario-tabela">
 
                                                     <strong>
+
                                                         {obterNomeAula(
                                                             agendamento.aula
                                                         )}
+
                                                     </strong>
 
                                                     <span>
-                                                        <Clock3 size={14} />
+
+                                                        <Clock3
+                                                            size={14}
+                                                        />
+
                                                         {obterHorarioAula(
                                                             agendamento.aula
                                                         )}
+
                                                     </span>
 
                                                 </div>
 
                                             </td>
 
+
                                             <td>
 
                                                 <div className="sala-tabela">
 
-                                                    <MapPin size={15} />
+                                                    <MapPin
+                                                        size={15}
+                                                    />
 
                                                     {agendamento.sala}
 
@@ -546,11 +809,14 @@ async function excluirAgendamento(id) {
 
                                             </td>
 
+
                                             <td>
 
                                                 <div className="pessoa-tabela">
 
-                                                    <UserRound size={15} />
+                                                    <UserRound
+                                                        size={15}
+                                                    />
 
                                                     {agendamento.professor}
 
@@ -558,11 +824,14 @@ async function excluirAgendamento(id) {
 
                                             </td>
 
+
                                             <td>
 
                                                 <div className="turma-tabela">
 
-                                                    <GraduationCap size={15} />
+                                                    <GraduationCap
+                                                        size={15}
+                                                    />
 
                                                     {agendamento.turma}
 
@@ -570,24 +839,40 @@ async function excluirAgendamento(id) {
 
                                             </td>
 
+
                                             <td>
 
                                                 <span
                                                     className={`status-agendamento status-${agendamento.status?.toLowerCase()}`}
                                                 >
+
                                                     {agendamento.status}
+
                                                 </span>
 
                                             </td>
+
+
                                             <td>
-    <button
-        className="agendamento-botao-excluir"
-        onClick={() => excluirAgendamento(agendamento.id)}
-        title="Excluir agendamento"
-    >
-        <Trash2 size={17} />
-    </button>
-</td>
+
+                                                <button
+                                                    type="button"
+                                                    className="agendamento-botao-excluir"
+                                                    onClick={() =>
+                                                        excluirAgendamento(
+                                                            agendamento.id
+                                                        )
+                                                    }
+                                                    title="Excluir agendamento"
+                                                >
+
+                                                    <Trash2
+                                                        size={17}
+                                                    />
+
+                                                </button>
+
+                                            </td>
 
                                         </tr>
 
@@ -603,7 +888,6 @@ async function excluirAgendamento(id) {
                 )}
 
             </section>
-            
 
 
             {/* =================================================
@@ -630,12 +914,15 @@ async function excluirAgendamento(id) {
 
                             </div>
 
+
                             <button
                                 type="button"
                                 className="botao-fechar-modal"
                                 onClick={fecharModal}
                             >
+
                                 <X size={20} />
+
                             </button>
 
                         </div>
@@ -653,7 +940,9 @@ async function excluirAgendamento(id) {
                                 </label>
 
                                 <select
-                                    value={professorSelecionado}
+                                    value={
+                                        professorSelecionado
+                                    }
                                     onChange={(evento) =>
                                         setProfessorSelecionado(
                                             evento.target.value
@@ -666,16 +955,24 @@ async function excluirAgendamento(id) {
                                         Selecione o professor
                                     </option>
 
-                                    {professores.map((professor) => (
+                                    {professores.map(
+                                        (professor) => (
 
-                                        <option
-                                            key={professor.id}
-                                            value={professor.id}
-                                        >
-                                            {professor.nome}
-                                        </option>
+                                            <option
+                                                key={
+                                                    professor.id
+                                                }
+                                                value={
+                                                    professor.id
+                                                }
+                                            >
+                                                {
+                                                    professor.nome
+                                                }
+                                            </option>
 
-                                    ))}
+                                        )
+                                    )}
 
                                 </select>
 
@@ -689,7 +986,9 @@ async function excluirAgendamento(id) {
                                 </label>
 
                                 <select
-                                    value={turmaSelecionada}
+                                    value={
+                                        turmaSelecionada
+                                    }
                                     onChange={(evento) =>
                                         setTurmaSelecionada(
                                             evento.target.value
@@ -702,16 +1001,24 @@ async function excluirAgendamento(id) {
                                         Selecione a turma
                                     </option>
 
-                                    {turmas.map((turma) => (
+                                    {turmas.map(
+                                        (turma) => (
 
-                                        <option
-                                            key={turma.id}
-                                            value={turma.id}
-                                        >
-                                            {turma.nome}
-                                        </option>
+                                            <option
+                                                key={
+                                                    turma.id
+                                                }
+                                                value={
+                                                    turma.id
+                                                }
+                                            >
+                                                {
+                                                    turma.nome
+                                                }
+                                            </option>
 
-                                    ))}
+                                        )
+                                    )}
 
                                 </select>
 
@@ -728,9 +1035,14 @@ async function excluirAgendamento(id) {
 
                                     <input
                                         type="date"
-                                        value={dataSelecionada}
+                                        value={
+                                            dataSelecionada
+                                        }
+                                        min={
+                                            obterDataHoje()
+                                        }
                                         onChange={(evento) =>
-                                            setDataSelecionada(
+                                            alterarDataSelecionada(
                                                 evento.target.value
                                             )
                                         }
@@ -747,7 +1059,9 @@ async function excluirAgendamento(id) {
                                     </label>
 
                                     <select
-                                        value={salaSelecionada}
+                                        value={
+                                            salaSelecionada
+                                        }
                                         onChange={(evento) =>
                                             setSalaSelecionada(
                                                 evento.target.value
@@ -760,16 +1074,18 @@ async function excluirAgendamento(id) {
                                             Selecione a sala
                                         </option>
 
-                                        {SALAS.map((sala) => (
+                                        {SALAS.map(
+                                            (sala) => (
 
-                                            <option
-                                                key={sala}
-                                                value={sala}
-                                            >
-                                                {sala}
-                                            </option>
+                                                <option
+                                                    key={sala}
+                                                    value={sala}
+                                                >
+                                                    {sala}
+                                                </option>
 
-                                        ))}
+                                            )
+                                        )}
 
                                     </select>
 
@@ -785,7 +1101,9 @@ async function excluirAgendamento(id) {
                                 </label>
 
                                 <select
-                                    value={aulaSelecionada}
+                                    value={
+                                        aulaSelecionada
+                                    }
                                     onChange={(evento) =>
                                         setAulaSelecionada(
                                             evento.target.value
@@ -798,17 +1116,40 @@ async function excluirAgendamento(id) {
                                         Selecione a aula
                                     </option>
 
-                                    {AULAS.map((aula) => (
+
+                                    {aulasDisponiveis.length === 0 ? (
 
                                         <option
-                                            key={aula.numero}
-                                            value={aula.numero}
+                                            value=""
+                                            disabled
                                         >
-                                            {aula.numero}ª aula —{" "}
-                                            {aula.inicio} às {aula.fim}
+                                            Nenhuma aula disponível para esta data
                                         </option>
 
-                                    ))}
+                                    ) : (
+
+                                        aulasDisponiveis.map(
+                                            (aula) => (
+
+                                                <option
+                                                    key={
+                                                        aula.numero
+                                                    }
+                                                    value={
+                                                        aula.numero
+                                                    }
+                                                >
+
+                                                    {aula.numero}ª aula —{" "}
+                                                    {aula.inicio} às{" "}
+                                                    {aula.fim}
+
+                                                </option>
+
+                                            )
+                                        )
+
+                                    )}
 
                                 </select>
 
@@ -822,7 +1163,9 @@ async function excluirAgendamento(id) {
                                 </label>
 
                                 <textarea
-                                    value={observacao}
+                                    value={
+                                        observacao
+                                    }
                                     onChange={(evento) =>
                                         setObservacao(
                                             evento.target.value
@@ -841,17 +1184,26 @@ async function excluirAgendamento(id) {
                                 <button
                                     type="button"
                                     className="botao-cancelar"
-                                    onClick={fecharModal}
-                                    disabled={salvando}
+                                    onClick={
+                                        fecharModal
+                                    }
+                                    disabled={
+                                        salvando
+                                    }
                                 >
                                     Cancelar
                                 </button>
 
+
                                 <button
                                     type="submit"
                                     className="botao-salvar"
-                                    disabled={salvando}
+                                    disabled={
+                                        salvando ||
+                                        aulasDisponiveis.length === 0
+                                    }
                                 >
+
                                     <Plus size={17} />
 
                                     {salvando

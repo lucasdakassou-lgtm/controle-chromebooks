@@ -1,538 +1,946 @@
-const pool = require('../database/database');
-
-const TOTAL_CHROMEBOOKS = 47;
+const pool = require("../database/database");
 
 
-// ==========================================
-// VERIFICAR DISPONIBILIDADE DE CHROMEBOOKS
-// ==========================================
+// ============================================================
+// CONFIGURAÇÕES DOS EQUIPAMENTOS
+// ============================================================
 
-const verificarDisponibilidade = async (req, res) => {
+const TIPOS_EQUIPAMENTO = [
+    "CHROMEBOOK",
+    "TABLET"
+];
 
-    console.log('💻 Verificando Chromebooks disponíveis...');
+const FINALIDADES_EMPRESTIMO = [
+    "AULA",
+    "USO_PROPRIO"
+];
 
-    try {
 
-        // Soma todos os Chromebooks que estão em empréstimos ativos
-        const resultado = await pool.query(`
-            SELECT COALESCE(SUM(quantidade), 0) AS total_emprestado
-            FROM emprestimos
-            WHERE status = 'ATIVO'
-        `);
+// ============================================================
+// VALIDAR TIPO DE EQUIPAMENTO
+// ============================================================
 
-        const totalEmprestado = Number(
-            resultado.rows[0].total_emprestado
-        );
+function validarTipoEquipamento(tipo) {
 
-        const disponiveis = TOTAL_CHROMEBOOKS - totalEmprestado;
+    const tipoNormalizado =
+        String(tipo || "CHROMEBOOK")
+            .trim()
+            .toUpperCase();
 
-        console.log('📊 Total de Chromebooks:', TOTAL_CHROMEBOOKS);
-        console.log('📤 Emprestados:', totalEmprestado);
-        console.log('💻 Disponíveis:', disponiveis);
-
-        res.status(200).json({
-            sucesso: true,
-            totalChromebooks: TOTAL_CHROMEBOOKS,
-            emprestados: totalEmprestado,
-            disponiveis: disponiveis
-        });
-
-    } catch (erro) {
-
-        console.error('❌ ERRO AO VERIFICAR DISPONIBILIDADE');
-        console.error('Mensagem:', erro.message);
-        console.error('Código:', erro.code);
-
-        res.status(500).json({
-            sucesso: false,
-            mensagem: 'Erro ao verificar disponibilidade.'
-        });
-
+    if (!TIPOS_EQUIPAMENTO.includes(tipoNormalizado)) {
+        return null;
     }
 
-};
+    return tipoNormalizado;
+}
 
 
-// ==========================================
+// ============================================================
+// VALIDAR FINALIDADE
+// ============================================================
+
+function validarFinalidade(finalidade) {
+
+    const finalidadeNormalizada =
+        String(finalidade || "AULA")
+            .trim()
+            .toUpperCase();
+
+    if (
+        !FINALIDADES_EMPRESTIMO.includes(
+            finalidadeNormalizada
+        )
+    ) {
+        return null;
+    }
+
+    return finalidadeNormalizada;
+}
+
+
+// ============================================================
 // CRIAR EMPRÉSTIMO
-// ==========================================
+// ============================================================
 
-const criarEmprestimo = async (req, res) => {
-
-    console.log('📥 Nova tentativa de empréstimo');
-    console.log('Dados recebidos:', req.body);
+async function criarEmprestimo(req, res) {
 
     try {
 
         const {
             professor_id,
             turma_id,
-            quantidade
+            quantidade,
+            tipo_equipamento,
+            finalidade
         } = req.body;
 
 
-        // --------------------------
-        // VALIDAÇÕES
-        // --------------------------
+        console.log(
+            "[EMPRESTIMOS] Tentando criar empréstimo:",
+            req.body
+        );
 
-        if (!professor_id || !turma_id || !quantidade) {
 
-            console.warn('⚠️ Dados obrigatórios faltando');
+        // --------------------------------------------------------
+        // VALIDAR FINALIDADE
+        // --------------------------------------------------------
+
+        const finalidadeNormalizada =
+            validarFinalidade(finalidade);
+
+
+        if (!finalidadeNormalizada) {
 
             return res.status(400).json({
-                sucesso: false,
-                mensagem: 'Professor, turma e quantidade são obrigatórios.'
+                mensagem:
+                    "Finalidade inválida. Use AULA ou USO_PROPRIO."
             });
+
+        }
+
+
+        // --------------------------------------------------------
+        // VALIDAR PROFESSOR
+        // --------------------------------------------------------
+
+        if (!professor_id) {
+
+            return res.status(400).json({
+                mensagem: "O professor é obrigatório."
+            });
+
+        }
+
+
+        // --------------------------------------------------------
+        // VALIDAR TURMA
+        //
+        // Para AULA, turma é obrigatória.
+        // Para USO_PROPRIO, turma não é necessária.
+        // --------------------------------------------------------
+
+        if (
+            finalidadeNormalizada === "AULA" &&
+            !turma_id
+        ) {
+
+            return res.status(400).json({
+                mensagem:
+                    "A turma é obrigatória para empréstimos de aula."
+            });
+
+        }
+
+
+        // --------------------------------------------------------
+        // VALIDAR QUANTIDADE
+        // --------------------------------------------------------
+
+        if (
+            quantidade === undefined ||
+            quantidade === null ||
+            Number(quantidade) <= 0
+        ) {
+
+            return res.status(400).json({
+                mensagem:
+                    "A quantidade deve ser maior que zero."
+            });
+
+        }
+
+
+        // --------------------------------------------------------
+        // VALIDAR EQUIPAMENTO
+        // --------------------------------------------------------
+
+        const tipo =
+            validarTipoEquipamento(
+                tipo_equipamento
+            );
+
+
+        if (!tipo) {
+
+            return res.status(400).json({
+                mensagem:
+                    "Tipo de equipamento inválido. Use CHROMEBOOK ou TABLET."
+            });
+
+        }
+
+
+        const quantidadeNumerica =
+            Number(quantidade);
+
+
+        // --------------------------------------------------------
+        // VERIFICAR SE PROFESSOR EXISTE
+        // --------------------------------------------------------
+
+        const professor =
+            await pool.query(
+                `
+                SELECT
+                    id,
+                    nome
+                FROM professores
+                WHERE id = $1
+                `,
+                [professor_id]
+            );
+
+
+        if (
+            professor.rows.length === 0
+        ) {
+
+            return res.status(404).json({
+                mensagem:
+                    "Professor não encontrado."
+            });
+
+        }
+
+
+        // --------------------------------------------------------
+        // VERIFICAR SE TURMA EXISTE
+        //
+        // Só verifica quando for empréstimo de aula.
+        // --------------------------------------------------------
+
+        if (
+            finalidadeNormalizada === "AULA"
+        ) {
+
+            const turma =
+                await pool.query(
+                    `
+                    SELECT
+                        id,
+                        nome
+                    FROM turmas
+                    WHERE id = $1
+                    `,
+                    [turma_id]
+                );
+
+
+            if (
+                turma.rows.length === 0
+            ) {
+
+                return res.status(404).json({
+                    mensagem:
+                        "Turma não encontrada."
+                });
+
+            }
+
+        }
+
+
+        // --------------------------------------------------------
+        // BUSCAR TOTAL DOS EQUIPAMENTOS
+        // --------------------------------------------------------
+
+        const configuracao =
+            await pool.query(
+                `
+                SELECT
+                    total_chromebooks,
+                    total_tablets
+                FROM configuracoes
+                LIMIT 1
+                `
+            );
+
+
+        if (
+            configuracao.rows.length === 0
+        ) {
+
+            return res.status(500).json({
+                mensagem:
+                    "Configuração dos equipamentos não encontrada."
+            });
+
+        }
+
+
+        const config =
+            configuracao.rows[0];
+
+
+        let totalEquipamentos = 0;
+
+
+        if (
+            tipo === "CHROMEBOOK"
+        ) {
+
+            totalEquipamentos =
+                Number(
+                    config.total_chromebooks
+                ) || 0;
+
         }
 
 
         if (
-            isNaN(professor_id) ||
-            isNaN(turma_id) ||
-            isNaN(quantidade)
+            tipo === "TABLET"
         ) {
 
-            console.warn('⚠️ Dados inválidos recebidos');
+            totalEquipamentos =
+                Number(
+                    config.total_tablets
+                ) || 0;
 
-            return res.status(400).json({
-                sucesso: false,
-                mensagem: 'Os dados devem ser números válidos.'
-            });
         }
 
 
-        if (Number(quantidade) <= 0) {
+        // --------------------------------------------------------
+        // CALCULAR QUANTIDADE JÁ EMPRESTADA
+        // --------------------------------------------------------
 
-            return res.status(400).json({
-                sucesso: false,
-                mensagem: 'A quantidade deve ser maior que zero.'
-            });
-        }
-
-
-        if (Number(quantidade) > TOTAL_CHROMEBOOKS) {
-
-            return res.status(400).json({
-                sucesso: false,
-                mensagem: `Não existem ${quantidade} Chromebooks disponíveis no sistema.`
-            });
-        }
-
-
-        // --------------------------
-        // VERIFICAR PROFESSOR
-        // --------------------------
-
-        const professor = await pool.query(
-            'SELECT id, nome FROM professores WHERE id = $1',
-            [professor_id]
-        );
-
-
-        if (professor.rows.length === 0) {
-
-            console.warn(
-                `⚠️ Professor ID ${professor_id} não encontrado`
+        const emprestados =
+            await pool.query(
+                `
+                SELECT
+                    COALESCE(
+                        SUM(quantidade),
+                        0
+                    ) AS total
+                FROM emprestimos
+                WHERE
+                    tipo_equipamento = $1
+                    AND status = 'ATIVO'
+                `,
+                [tipo]
             );
 
-            return res.status(404).json({
-                sucesso: false,
-                mensagem: 'Professor não encontrado.'
-            });
-        }
+
+        const quantidadeEmprestada =
+            Number(
+                emprestados.rows[0].total
+            ) || 0;
 
 
-        // --------------------------
-        // VERIFICAR TURMA
-        // --------------------------
+        const quantidadeDisponivel =
+            totalEquipamentos -
+            quantidadeEmprestada;
 
-        const turma = await pool.query(
-            'SELECT id, nome FROM turmas WHERE id = $1',
-            [turma_id]
+
+        console.log(
+            `[EMPRESTIMOS] ${tipo}: total=${totalEquipamentos}, ` +
+            `emprestados=${quantidadeEmprestada}, ` +
+            `disponiveis=${quantidadeDisponivel}`
         );
 
 
-        if (turma.rows.length === 0) {
+        // --------------------------------------------------------
+        // VERIFICAR DISPONIBILIDADE
+        // --------------------------------------------------------
 
-            console.warn(
-                `⚠️ Turma ID ${turma_id} não encontrada`
-            );
-
-            return res.status(404).json({
-                sucesso: false,
-                mensagem: 'Turma não encontrada.'
-            });
-        }
-
-
-        // --------------------------
-        // CALCULAR DISPONIBILIDADE
-        // --------------------------
-
-        const resultadoEmprestados = await pool.query(`
-            SELECT COALESCE(SUM(quantidade), 0) AS total_emprestado
-            FROM emprestimos
-            WHERE status = 'ATIVO'
-        `);
-
-
-        const totalEmprestado = Number(
-            resultadoEmprestados.rows[0].total_emprestado
-        );
-
-
-        const disponiveis = TOTAL_CHROMEBOOKS - totalEmprestado;
-
-
-        console.log('📊 Chromebooks emprestados:', totalEmprestado);
-        console.log('💻 Chromebooks disponíveis:', disponiveis);
-
-
-        // --------------------------
-        // VERIFICAR ESTOQUE
-        // --------------------------
-
-        if (Number(quantidade) > disponiveis) {
-
-            console.warn(
-                `⚠️ Empréstimo bloqueado. Pedido: ${quantidade} | Disponível: ${disponiveis}`
-            );
+        if (
+            quantidadeNumerica >
+            quantidadeDisponivel
+        ) {
 
             return res.status(400).json({
-                sucesso: false,
-                mensagem: 'Não há Chromebooks suficientes disponíveis.',
-                disponiveis: disponiveis,
-                solicitado: Number(quantidade)
+                mensagem:
+                    `Não há equipamentos suficientes disponíveis. ` +
+                    `Disponíveis: ${quantidadeDisponivel}.`
             });
+
         }
 
 
-        // --------------------------
-        // CRIAR EMPRÉSTIMO
-        // --------------------------
+        // --------------------------------------------------------
+        // REGISTRAR EMPRÉSTIMO
+        // --------------------------------------------------------
 
-        const novoEmprestimo = await pool.query(
-            `
-            INSERT INTO emprestimos
-            (
-                professor_id,
-                turma_id,
-                quantidade,
-                status
-            )
+        const resultado =
+            await pool.query(
+                `
+                INSERT INTO emprestimos
+                (
+                    professor_id,
+                    turma_id,
+                    quantidade,
+                    tipo_equipamento,
+                    finalidade,
+                    status
+                )
+                VALUES
+                (
+                    $1,
+                    $2,
+                    $3,
+                    $4,
+                    $5,
+                    'ATIVO'
+                )
+                RETURNING *
+                `,
+                [
+                    professor_id,
+                    finalidadeNormalizada === "AULA"
+                        ? turma_id
+                        : null,
+                    quantidadeNumerica,
+                    tipo,
+                    finalidadeNormalizada
+                ]
+            );
 
-            VALUES ($1, $2, $3, 'ATIVO')
 
-            RETURNING *
-            `,
-            [
-                professor_id,
-                turma_id,
-                Number(quantidade)
-            ]
+        console.log(
+            "[EMPRESTIMOS] Empréstimo criado:",
+            resultado.rows[0]
         );
 
 
-        console.log('✅ EMPRÉSTIMO CRIADO COM SUCESSO');
-        console.log('Professor:', professor.rows[0].nome);
-        console.log('Turma:', turma.rows[0].nome);
-        console.log('Quantidade:', quantidade);
+        return res.status(201).json({
 
+            mensagem:
+                finalidadeNormalizada === "USO_PROPRIO"
+                    ? "Empréstimo para uso próprio registrado com sucesso."
+                    : "Empréstimo registrado com sucesso.",
 
-        res.status(201).json({
-
-            sucesso: true,
-
-            mensagem: 'Empréstimo registrado com sucesso!',
-
-            emprestimo: novoEmprestimo.rows[0],
-
-            chromebooksRestantes:
-                disponiveis - Number(quantidade)
+            emprestimo:
+                resultado.rows[0]
 
         });
 
+
     } catch (erro) {
 
-        console.error('');
-        console.error('❌ ERRO AO CRIAR EMPRÉSTIMO');
-        console.error('Mensagem:', erro.message);
-        console.error('Código:', erro.code);
-        console.error('Detalhes:', erro.detail);
+        console.error(
+            "[EMPRESTIMOS] Erro ao criar empréstimo:",
+            erro
+        );
 
-        res.status(500).json({
-            sucesso: false,
-            mensagem: 'Erro interno ao registrar empréstimo.'
+
+        return res.status(500).json({
+            mensagem:
+                "Erro ao registrar empréstimo."
         });
 
     }
 
-};
+}
 
 
-// ==========================================
+// ============================================================
 // LISTAR TODOS OS EMPRÉSTIMOS
-// ==========================================
+// ============================================================
 
-const listarEmprestimos = async (req, res) => {
-
-    console.log('📋 Buscando histórico de empréstimos...');
+async function listarEmprestimos(req, res) {
 
     try {
 
-        const resultado = await pool.query(`
+        const resultado =
+            await pool.query(
+                `
+                SELECT
+                    emprestimos.id,
+                    emprestimos.professor_id,
+                    professores.nome AS professor,
+                    emprestimos.turma_id,
+                    turmas.nome AS turma,
+                    emprestimos.quantidade,
+                    emprestimos.tipo_equipamento,
+                    emprestimos.finalidade,
+                    emprestimos.data_retirada,
+                    emprestimos.data_devolucao,
+                    emprestimos.status
 
-            SELECT
+                FROM emprestimos
 
-                emprestimos.id,
+                INNER JOIN professores
+                    ON emprestimos.professor_id =
+                       professores.id
 
-                professores.nome AS professor,
+                LEFT JOIN turmas
+                    ON emprestimos.turma_id =
+                       turmas.id
 
-                turmas.nome AS turma,
-
-                emprestimos.quantidade,
-
-                emprestimos.data_retirada,
-
-                emprestimos.data_devolucao,
-
-                emprestimos.status
-
-            FROM emprestimos
-
-            JOIN professores
-                ON emprestimos.professor_id = professores.id
-
-            JOIN turmas
-                ON emprestimos.turma_id = turmas.id
-
-            ORDER BY emprestimos.data_retirada DESC
-
-        `);
+                ORDER BY
+                    emprestimos.data_retirada DESC
+                `
+            );
 
 
         console.log(
-            `✅ ${resultado.rows.length} empréstimos encontrados`
+            `[EMPRESTIMOS] ${resultado.rows.length} empréstimos encontrados.`
         );
 
 
-        res.status(200).json({
+        return res.status(200).json({
 
-            sucesso: true,
+            emprestimos:
+                resultado.rows,
 
-            total: resultado.rows.length,
-
-            emprestimos: resultado.rows
+            dados:
+                resultado.rows
 
         });
 
+
     } catch (erro) {
 
-        console.error('❌ ERRO AO LISTAR EMPRÉSTIMOS');
-        console.error('Mensagem:', erro.message);
+        console.error(
+            "[EMPRESTIMOS] Erro ao listar empréstimos:",
+            erro
+        );
 
-        res.status(500).json({
-            sucesso: false,
-            mensagem: 'Erro ao buscar empréstimos.'
+
+        return res.status(500).json({
+            mensagem:
+                "Erro ao carregar empréstimos."
         });
 
     }
 
-};
+}
 
 
-// ==========================================
+// ============================================================
 // LISTAR EMPRÉSTIMOS ATIVOS
-// ==========================================
+// ============================================================
 
-const listarEmprestimosAtivos = async (req, res) => {
-
-    console.log('📋 Buscando empréstimos ativos...');
+async function listarEmprestimosAtivos(req, res) {
 
     try {
 
-        const resultado = await pool.query(`
+        const resultado =
+            await pool.query(
+                `
+                SELECT
+                    emprestimos.id,
+                    emprestimos.professor_id,
+                    professores.nome AS professor,
+                    emprestimos.turma_id,
+                    turmas.nome AS turma,
+                    emprestimos.quantidade,
+                    emprestimos.tipo_equipamento,
+                    emprestimos.finalidade,
+                    emprestimos.data_retirada,
+                    emprestimos.data_devolucao,
+                    emprestimos.status
 
-            SELECT
+                FROM emprestimos
 
-                emprestimos.id,
+                INNER JOIN professores
+                    ON emprestimos.professor_id =
+                       professores.id
 
-                professores.nome AS professor,
+                LEFT JOIN turmas
+                    ON emprestimos.turma_id =
+                       turmas.id
 
-                turmas.nome AS turma,
+                WHERE
+                    emprestimos.status = 'ATIVO'
 
-                emprestimos.quantidade,
-
-                emprestimos.data_retirada,
-
-                emprestimos.status
-
-            FROM emprestimos
-
-            JOIN professores
-                ON emprestimos.professor_id = professores.id
-
-            JOIN turmas
-                ON emprestimos.turma_id = turmas.id
-
-            WHERE emprestimos.status = 'ATIVO'
-
-            ORDER BY emprestimos.data_retirada DESC
-
-        `);
+                ORDER BY
+                    emprestimos.data_retirada DESC
+                `
+            );
 
 
-        console.log(
-            `⚠️ ${resultado.rows.length} empréstimos ativos`
-        );
+        return res.status(200).json({
 
+            emprestimos:
+                resultado.rows,
 
-        res.status(200).json({
-
-            sucesso: true,
-
-            total: resultado.rows.length,
-
-            emprestimos: resultado.rows
+            dados:
+                resultado.rows
 
         });
 
+
     } catch (erro) {
 
-        console.error('❌ ERRO AO BUSCAR EMPRÉSTIMOS ATIVOS');
-        console.error('Mensagem:', erro.message);
+        console.error(
+            "[EMPRESTIMOS] Erro ao listar empréstimos ativos:",
+            erro
+        );
 
-        res.status(500).json({
-            sucesso: false,
-            mensagem: 'Erro ao buscar empréstimos ativos.'
+
+        return res.status(500).json({
+            mensagem:
+                "Erro ao carregar empréstimos ativos."
         });
 
     }
 
-};
+}
 
 
-// ==========================================
-// DEVOLVER CHROMEBOOKS
-// ==========================================
+// ============================================================
+// DEVOLVER EMPRÉSTIMO
+// ============================================================
 
-const devolverEmprestimo = async (req, res) => {
+async function devolverEmprestimo(req, res) {
 
     const { id } = req.params;
 
-    console.log(`📥 Tentativa de devolução do empréstimo ID: ${id}`);
+
+    console.log("\n=================================");
+    console.log("[DEVOLUÇÃO] Iniciando devolução");
+    console.log("[DEVOLUÇÃO] ID recebido:", id);
+    console.log("=================================");
+
 
     try {
 
-        // Validar ID
-        if (isNaN(id)) {
+        if (
+            !id ||
+            Number.isNaN(Number(id))
+        ) {
+
+            console.log(
+                "[DEVOLUÇÃO] ID inválido."
+            );
+
 
             return res.status(400).json({
-                sucesso: false,
-                mensagem: 'ID do empréstimo inválido.'
+                mensagem:
+                    "ID do empréstimo inválido."
             });
 
         }
 
 
-        // Verificar se empréstimo existe
-        const emprestimo = await pool.query(
-            'SELECT * FROM emprestimos WHERE id = $1',
-            [id]
+        console.log(
+            "[DEVOLUÇÃO] Procurando empréstimo no banco..."
         );
 
 
-        if (emprestimo.rows.length === 0) {
-
-            console.warn(
-                `⚠️ Empréstimo ID ${id} não encontrado`
+        const consulta =
+            await pool.query(
+                `
+                SELECT
+                    id,
+                    quantidade,
+                    tipo_equipamento,
+                    finalidade,
+                    status
+                FROM emprestimos
+                WHERE id = $1
+                `,
+                [id]
             );
+
+
+        console.log(
+            "[DEVOLUÇÃO] Resultado da busca:",
+            consulta.rows
+        );
+
+
+        if (
+            consulta.rows.length === 0
+        ) {
+
+            console.log(
+                "[DEVOLUÇÃO] Empréstimo não encontrado."
+            );
+
 
             return res.status(404).json({
-                sucesso: false,
-                mensagem: 'Empréstimo não encontrado.'
+                mensagem:
+                    "Empréstimo não encontrado."
             });
 
         }
 
 
-        // Verificar se já foi devolvido
-        if (emprestimo.rows[0].status === 'DEVOLVIDO') {
-
-            console.warn(
-                `⚠️ Empréstimo ID ${id} já foi devolvido`
-            );
-
-            return res.status(400).json({
-                sucesso: false,
-                mensagem: 'Este empréstimo já foi devolvido.'
-            });
-
-        }
+        const emprestimo =
+            consulta.rows[0];
 
 
-        // Registrar devolução
-        const resultado = await pool.query(
-
-            `
-            UPDATE emprestimos
-
-            SET
-
-                status = 'DEVOLVIDO',
-
-                data_devolucao = CURRENT_TIMESTAMP
-
-            WHERE id = $1
-
-            RETURNING *
-            `,
-
-            [id]
-
+        console.log(
+            "[DEVOLUÇÃO] Status atual:",
+            emprestimo.status
         );
 
 
-        console.log('✅ DEVOLUÇÃO REGISTRADA');
-        console.log('Empréstimo ID:', id);
+        if (
+            emprestimo.status !== "ATIVO"
+        ) {
+
+            console.log(
+                "[DEVOLUÇÃO] Empréstimo já foi devolvido."
+            );
 
 
-        res.status(200).json({
+            return res.status(400).json({
+                mensagem:
+                    "Este empréstimo já foi devolvido."
+            });
 
-            sucesso: true,
+        }
 
-            mensagem: 'Chromebooks devolvidos com sucesso!',
 
-            emprestimo: resultado.rows[0]
+        console.log(
+            "[DEVOLUÇÃO] Atualizando banco..."
+        );
+
+
+        const resultado =
+            await pool.query(
+                `
+                UPDATE emprestimos
+                SET
+                    status = 'DEVOLVIDO',
+                    data_devolucao = CURRENT_TIMESTAMP
+                WHERE
+                    id = $1
+                    AND status = 'ATIVO'
+                RETURNING
+                    id,
+                    quantidade,
+                    tipo_equipamento,
+                    finalidade,
+                    status,
+                    data_devolucao
+                `,
+                [id]
+            );
+
+
+        console.log(
+            "[DEVOLUÇÃO] Resultado do UPDATE:",
+            resultado.rows
+        );
+
+
+        if (
+            resultado.rows.length === 0
+        ) {
+
+            console.log(
+                "[DEVOLUÇÃO] UPDATE não alterou nenhum registro."
+            );
+
+
+            return res.status(400).json({
+                mensagem:
+                    "Não foi possível registrar a devolução."
+            });
+
+        }
+
+
+        console.log(
+            "[DEVOLUÇÃO] Devolução registrada no banco com sucesso."
+        );
+
+
+        return res.status(200).json({
+
+            mensagem:
+                "Devolução registrada com sucesso.",
+
+            emprestimo:
+                resultado.rows[0]
 
         });
 
+
     } catch (erro) {
 
-        console.error('❌ ERRO AO REGISTRAR DEVOLUÇÃO');
-        console.error('Mensagem:', erro.message);
-        console.error('Código:', erro.code);
+        console.error(
+            "[DEVOLUÇÃO] ERRO:",
+            erro
+        );
 
-        res.status(500).json({
-            sucesso: false,
-            mensagem: 'Erro interno ao registrar devolução.'
+
+        return res.status(500).json({
+            mensagem:
+                "Erro ao registrar a devolução."
         });
 
     }
 
-};
+}
 
+
+// ============================================================
+// VERIFICAR DISPONIBILIDADE
+// ============================================================
+
+async function verificarDisponibilidade(req, res) {
+
+    try {
+
+        const tipo =
+            validarTipoEquipamento(
+                req.query.tipo_equipamento ||
+                "CHROMEBOOK"
+            );
+
+
+        if (!tipo) {
+
+            return res.status(400).json({
+                mensagem:
+                    "Tipo de equipamento inválido."
+            });
+
+        }
+
+
+        // --------------------------------------------------------
+        // BUSCAR CONFIGURAÇÃO
+        // --------------------------------------------------------
+
+        const configuracao =
+            await pool.query(
+                `
+                SELECT
+                    total_chromebooks,
+                    total_tablets
+                FROM configuracoes
+                LIMIT 1
+                `
+            );
+
+
+        if (
+            configuracao.rows.length === 0
+        ) {
+
+            return res.status(500).json({
+                mensagem:
+                    "Configuração dos equipamentos não encontrada."
+            });
+
+        }
+
+
+        const config =
+            configuracao.rows[0];
+
+
+        let total = 0;
+
+
+        if (
+            tipo === "CHROMEBOOK"
+        ) {
+
+            total =
+                Number(
+                    config.total_chromebooks
+                ) || 0;
+
+        }
+
+
+        if (
+            tipo === "TABLET"
+        ) {
+
+            total =
+                Number(
+                    config.total_tablets
+                ) || 0;
+
+        }
+
+
+        // --------------------------------------------------------
+        // BUSCAR EQUIPAMENTOS EMPRESTADOS
+        // --------------------------------------------------------
+
+        const emprestados =
+            await pool.query(
+                `
+                SELECT
+                    COALESCE(
+                        SUM(quantidade),
+                        0
+                    ) AS total
+
+                FROM emprestimos
+
+                WHERE
+                    tipo_equipamento = $1
+                    AND status = 'ATIVO'
+                `,
+                [tipo]
+            );
+
+
+        const quantidadeEmprestada =
+            Number(
+                emprestados.rows[0].total
+            ) || 0;
+
+
+        const disponivel =
+            Math.max(
+                total -
+                quantidadeEmprestada,
+                0
+            );
+
+
+        console.log(
+            `[EMPRESTIMOS] Disponibilidade ${tipo}:`,
+            {
+                total,
+                emprestados:
+                    quantidadeEmprestada,
+                disponivel
+            }
+        );
+
+
+        return res.status(200).json({
+
+            tipo_equipamento:
+                tipo,
+
+            total,
+
+            emprestados:
+                quantidadeEmprestada,
+
+            disponivel
+
+        });
+
+
+    } catch (erro) {
+
+        console.error(
+            "[EMPRESTIMOS] Erro ao verificar disponibilidade:",
+            erro
+        );
+
+
+        return res.status(500).json({
+            mensagem:
+                "Erro ao verificar disponibilidade."
+        });
+
+    }
+
+}
+
+
+// ============================================================
+// EXPORTAÇÕES
+// ============================================================
 
 module.exports = {
-
     criarEmprestimo,
-
     listarEmprestimos,
-
     listarEmprestimosAtivos,
-
     devolverEmprestimo,
-
     verificarDisponibilidade
-
 };

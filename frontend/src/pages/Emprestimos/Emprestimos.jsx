@@ -1,75 +1,108 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react";
 
 import {
-    Plus,
     Laptop,
-    LaptopMinimal,
-    CheckCircle2,
+    Tablet,
     Search,
-    RotateCcw
-} from "lucide-react"
+    Plus,
+    RefreshCw,
+    RotateCcw,
+    X,
+    Save,
+    AlertTriangle
+} from "lucide-react";
 
-import api from "../../services/api"
-
-import "./Emprestimos.css"
+import api from "../../services/api";
+import "./Emprestimos.css";
 
 
 function Emprestimos() {
 
     // =========================================================
-    // ESTADOS
+    // DADOS
     // =========================================================
 
-    // Guarda a quantidade total, emprestada e disponível
-    const [resumo, setResumo] = useState(null)
+    const [emprestimos, setEmprestimos] = useState([]);
 
-    // Guarda os empréstimos ativos
-    const [emprestimos, setEmprestimos] = useState([])
+    const [professores, setProfessores] = useState([]);
 
-    // Texto usado na busca da tabela
-    const [busca, setBusca] = useState("")
-
-    // Controle de carregamento e erro da página
-    const [carregando, setCarregando] = useState(true)
-    const [erro, setErro] = useState("")
-
-    // Controla se o modal está aberto
-    const [modalAberto, setModalAberto] = useState(false)
+    const [turmas, setTurmas] = useState([]);
 
 
     // =========================================================
-    // ESTADOS DO FORMULÁRIO
+    // DISPONIBILIDADE
     // =========================================================
 
-    // Lista de professores que vem do backend
-    const [professores, setProfessores] = useState([])
+    const [disponibilidadeChromebook, setDisponibilidadeChromebook] =
+        useState({
+            total: 0,
+            emprestados: 0,
+            disponivel: 0
+        });
 
-    // Lista de turmas que vem do backend
-    const [turmas, setTurmas] = useState([])
-
-    // Professor escolhido no formulário
-    const [professorSelecionado, setProfessorSelecionado] = useState("")
-
-    // Turma escolhida no formulário
-    const [turmaSelecionada, setTurmaSelecionada] = useState("")
-
-    // Quantidade de Chromebooks
-    const [quantidade, setQuantidade] = useState("")
-
-    // Controle do botão de salvar
-    const [salvando, setSalvando] = useState(false)
-
-    // Erro específico do formulário
-    const [erroFormulario, setErroFormulario] = useState("")
+    const [disponibilidadeTablet, setDisponibilidadeTablet] =
+        useState({
+            total: 0,
+            emprestados: 0,
+            disponivel: 0
+        });
 
 
     // =========================================================
-    // CARREGAR DADOS AO ABRIR A PÁGINA
+    // BUSCA
     // =========================================================
 
-    useEffect(() => {
-        carregarEmprestimos()
-    }, [])
+    const [busca, setBusca] = useState("");
+
+
+    // =========================================================
+    // ESTADOS DA PÁGINA
+    // =========================================================
+
+    const [carregando, setCarregando] = useState(true);
+
+    const [erro, setErro] = useState("");
+
+    const [mensagemSucesso, setMensagemSucesso] = useState("");
+
+
+    // =========================================================
+    // MODAL
+    // =========================================================
+
+    const [modalAberto, setModalAberto] = useState(false);
+
+    const [salvando, setSalvando] = useState(false);
+
+    const [erroFormulario, setErroFormulario] = useState("");
+
+
+    // =========================================================
+    // FORMULÁRIO
+    // =========================================================
+
+    const [tipoEquipamento, setTipoEquipamento] =
+        useState("CHROMEBOOK");
+
+    const [finalidade, setFinalidade] =
+        useState("AULA");
+
+    const [professorSelecionado, setProfessorSelecionado] =
+        useState("");
+
+    const [turmaSelecionada, setTurmaSelecionada] =
+        useState("");
+
+    const [quantidade, setQuantidade] =
+        useState("");
+
+
+    // =========================================================
+    // DEVOLUÇÃO
+    // =========================================================
+
+    const [devolvendoId, setDevolvendoId] =
+        useState(null);
 
 
     // =========================================================
@@ -80,161 +113,379 @@ function Emprestimos() {
 
         try {
 
-            setCarregando(true)
-            setErro("")
-
-            console.log("[Empréstimos] Carregando dados...")
+            const resposta =
+                await api.get("/emprestimos/ativos");
 
 
-            // -------------------------------------------------
-            // BUSCA A DISPONIBILIDADE DOS CHROMEBOOKS
-            // -------------------------------------------------
-
-            const disponibilidadeResposta =
-                await api.get("/emprestimos/disponibilidade")
-
-            console.log(
-                "[Empréstimos] Disponibilidade:",
-                disponibilidadeResposta.data
-            )
-
-            // Essa rota já retorna o objeto diretamente
-            setResumo(disponibilidadeResposta.data)
+            const dados =
+                resposta.data?.emprestimos ||
+                resposta.data?.dados ||
+                [];
 
 
-            // -------------------------------------------------
-            // BUSCA OS EMPRÉSTIMOS ATIVOS
-            // -------------------------------------------------
-
-            const emprestimosResposta =
-                await api.get("/emprestimos/ativos")
-
-            console.log(
-                "[Empréstimos] Empréstimos ativos:",
-                emprestimosResposta.data
-            )
-
-
-            // O backend retorna:
-            //
-            // {
-            //     sucesso: true,
-            //     total: 3,
-            //     emprestimos: [...]
-            // }
-
-            const lista =
-                emprestimosResposta.data.emprestimos || []
+            setEmprestimos(dados);
 
 
             console.log(
-                "[Empréstimos] PRIMEIRO EMPRÉSTIMO:",
-                lista[0]
-            )
-
-            console.log(
-                "[Empréstimos] Lista final:",
-                lista
-            )
+                "[EMPRESTIMOS] Empréstimos ativos carregados:",
+                dados.length
+            );
 
 
-            setEmprestimos(lista)
-
-        } catch (error) {
+        } catch (erro) {
 
             console.error(
-                "[Empréstimos] Erro ao carregar:",
-                error
-            )
+                "[EMPRESTIMOS] Erro ao carregar empréstimos:",
+                erro
+            );
+
 
             setErro(
+                erro.response?.data?.mensagem ||
                 "Não foi possível carregar os empréstimos."
-            )
+            );
 
-        } finally {
-
-            setCarregando(false)
         }
+
     }
 
 
     // =========================================================
-    // CARREGAR PROFESSORES E TURMAS
+    // CARREGAR PROFESSORES
     // =========================================================
 
-    async function carregarDadosFormulario() {
+    async function carregarProfessores() {
 
         try {
 
-            console.log(
-                "[Empréstimos] Carregando professores e turmas..."
-            )
+            const resposta =
+                await api.get("/professores");
 
 
-            const [
-                professoresResposta,
-                turmasResposta
-            ] = await Promise.all([
-
-                api.get("/professores"),
-
-                api.get("/turmas")
-
-            ])
+            const dados =
+                resposta.data?.professores ||
+                resposta.data?.dados ||
+                resposta.data ||
+                [];
 
 
-            // -------------------------------------------------
-            // PROFESSORES
-            // -------------------------------------------------
-
-            const professoresDados =
-                professoresResposta.data
-
-            const listaProfessores =
-                Array.isArray(professoresDados)
-                    ? professoresDados
-                    : professoresDados.professores || []
-
-
-            // -------------------------------------------------
-            // TURMAS
-            // -------------------------------------------------
-
-            const turmasDados =
-                turmasResposta.data
-
-            const listaTurmas =
-                Array.isArray(turmasDados)
-                    ? turmasDados
-                    : turmasDados.turmas || []
+            setProfessores(
+                Array.isArray(dados)
+                    ? dados
+                    : []
+            );
 
 
             console.log(
-                "[Empréstimos] Lista de professores:",
-                listaProfessores
-            )
-
-            console.log(
-                "[Empréstimos] Lista de turmas:",
-                listaTurmas
-            )
+                "[EMPRESTIMOS] Professores carregados:",
+                dados.length
+            );
 
 
-            setProfessores(listaProfessores)
-            setTurmas(listaTurmas)
-
-        } catch (error) {
+        } catch (erro) {
 
             console.error(
-                "[Empréstimos] Erro ao carregar formulário:",
-                error
-            )
+                "[EMPRESTIMOS] Erro ao carregar professores:",
+                erro
+            );
 
-            setErroFormulario(
-                "Não foi possível carregar professores e turmas."
-            )
         }
+
     }
+
+
+    // =========================================================
+    // CARREGAR TURMAS
+    // =========================================================
+
+    async function carregarTurmas() {
+
+        try {
+
+            const resposta =
+                await api.get("/turmas");
+
+
+            const dados =
+                resposta.data?.turmas ||
+                resposta.data?.dados ||
+                resposta.data ||
+                [];
+
+
+            setTurmas(
+                Array.isArray(dados)
+                    ? dados
+                    : []
+            );
+
+
+            console.log(
+                "[EMPRESTIMOS] Turmas carregadas:",
+                dados.length
+            );
+
+
+        } catch (erro) {
+
+            console.error(
+                "[EMPRESTIMOS] Erro ao carregar turmas:",
+                erro
+            );
+
+        }
+
+    }
+
+
+    // =========================================================
+    // CARREGAR DISPONIBILIDADE
+    // =========================================================
+
+    async function carregarDisponibilidade() {
+
+        try {
+
+            const [
+                chromebooks,
+                tablets
+            ] = await Promise.all([
+
+                api.get(
+                    "/emprestimos/disponibilidade",
+                    {
+                        params: {
+                            tipo_equipamento:
+                                "CHROMEBOOK"
+                        }
+                    }
+                ),
+
+                api.get(
+                    "/emprestimos/disponibilidade",
+                    {
+                        params: {
+                            tipo_equipamento:
+                                "TABLET"
+                        }
+                    }
+                )
+
+            ]);
+
+
+            setDisponibilidadeChromebook({
+                total:
+                    Number(
+                        chromebooks.data?.total
+                    ) || 0,
+
+                emprestados:
+                    Number(
+                        chromebooks.data?.emprestados
+                    ) || 0,
+
+                disponivel:
+                    Number(
+                        chromebooks.data?.disponivel
+                    ) || 0
+            });
+
+
+            setDisponibilidadeTablet({
+                total:
+                    Number(
+                        tablets.data?.total
+                    ) || 0,
+
+                emprestados:
+                    Number(
+                        tablets.data?.emprestados
+                    ) || 0,
+
+                disponivel:
+                    Number(
+                        tablets.data?.disponivel
+                    ) || 0
+            });
+
+
+            console.log(
+                "[EMPRESTIMOS] Disponibilidade atualizada."
+            );
+
+
+        } catch (erro) {
+
+            console.error(
+                "[EMPRESTIMOS] Erro ao carregar disponibilidade:",
+                erro
+            );
+
+        }
+
+    }
+
+
+    // =========================================================
+    // CARREGAR TUDO
+    // =========================================================
+
+    async function carregarDados() {
+
+        try {
+
+            setCarregando(true);
+            setErro("");
+
+            await Promise.all([
+                carregarEmprestimos(),
+                carregarProfessores(),
+                carregarTurmas(),
+                carregarDisponibilidade()
+            ]);
+
+        } finally {
+
+            setCarregando(false);
+
+        }
+
+    }
+
+
+    // =========================================================
+    // CARREGAMENTO INICIAL
+    // =========================================================
+
+    useEffect(() => {
+
+        carregarDados();
+
+    }, []);
+
+
+    // =========================================================
+    // LIMPAR MENSAGEM DE SUCESSO
+    // =========================================================
+
+    useEffect(() => {
+
+        if (!mensagemSucesso) {
+            return;
+        }
+
+
+        const tempo =
+            setTimeout(() => {
+
+                setMensagemSucesso("");
+
+            }, 3500);
+
+
+        return () => clearTimeout(tempo);
+
+    }, [mensagemSucesso]);
+
+
+    // =========================================================
+    // DISPONIBILIDADE DO TIPO SELECIONADO
+    // =========================================================
+
+    const equipamentoSelecionado =
+        tipoEquipamento === "CHROMEBOOK"
+            ? disponibilidadeChromebook
+            : disponibilidadeTablet;
+
+
+    // =========================================================
+    // EQUIPAMENTOS EMPRESTADOS
+    // =========================================================
+
+    const totalEmprestado =
+        disponibilidadeChromebook.emprestados +
+        disponibilidadeTablet.emprestados;
+
+
+    // =========================================================
+    // TOTAL DE EQUIPAMENTOS
+    // =========================================================
+
+    const totalEquipamentos =
+        disponibilidadeChromebook.total +
+        disponibilidadeTablet.total;
+
+
+    // =========================================================
+    // TOTAL DISPONÍVEL
+    // =========================================================
+
+    const totalDisponivel =
+        disponibilidadeChromebook.disponivel +
+        disponibilidadeTablet.disponivel;
+
+
+    // =========================================================
+    // FILTRAR EMPRÉSTIMOS
+    // =========================================================
+
+    const emprestimosFiltrados =
+        useMemo(() => {
+
+            const termo =
+                busca
+                    .trim()
+                    .toLowerCase();
+
+
+            if (!termo) {
+                return emprestimos;
+            }
+
+
+            return emprestimos.filter(
+                (emprestimo) => {
+
+                    const professor =
+                        String(
+                            emprestimo.professor ||
+                            ""
+                        ).toLowerCase();
+
+
+                    const turma =
+                        String(
+                            emprestimo.turma ||
+                            ""
+                        ).toLowerCase();
+
+
+                    const equipamento =
+                        String(
+                            emprestimo.tipo_equipamento ||
+                            ""
+                        ).toLowerCase();
+
+
+                    const finalidadeEmprestimo =
+                        String(
+                            emprestimo.finalidade ||
+                            ""
+                        ).toLowerCase();
+
+
+                    return (
+                        professor.includes(termo) ||
+                        turma.includes(termo) ||
+                        equipamento.includes(termo) ||
+                        finalidadeEmprestimo.includes(termo)
+                    );
+
+                }
+            );
+
+        }, [emprestimos, busca]);
 
 
     // =========================================================
@@ -243,17 +494,20 @@ function Emprestimos() {
 
     function abrirModal() {
 
-        // Limpa os campos
-        setProfessorSelecionado("")
-        setTurmaSelecionada("")
-        setQuantidade("")
-        setErroFormulario("")
+        setTipoEquipamento("CHROMEBOOK");
 
-        // Abre o modal
-        setModalAberto(true)
+        setFinalidade("AULA");
 
-        // Carrega professores e turmas
-        carregarDadosFormulario()
+        setProfessorSelecionado("");
+
+        setTurmaSelecionada("");
+
+        setQuantidade("");
+
+        setErroFormulario("");
+
+        setModalAberto(true);
+
     }
 
 
@@ -263,8 +517,46 @@ function Emprestimos() {
 
     function fecharModal() {
 
-        setModalAberto(false)
-        setErroFormulario("")
+        if (salvando) {
+            return;
+        }
+
+
+        setModalAberto(false);
+
+        setTipoEquipamento("CHROMEBOOK");
+
+        setFinalidade("AULA");
+
+        setProfessorSelecionado("");
+
+        setTurmaSelecionada("");
+
+        setQuantidade("");
+
+        setErroFormulario("");
+
+    }
+
+
+    // =========================================================
+    // ALTERAR FINALIDADE
+    // =========================================================
+
+    function alterarFinalidade(novaFinalidade) {
+
+        setFinalidade(novaFinalidade);
+
+        setErroFormulario("");
+
+
+        // Uso próprio não precisa de turma.
+        if (novaFinalidade === "USO_PROPRIO") {
+
+            setTurmaSelecionada("");
+
+        }
+
     }
 
 
@@ -274,150 +566,153 @@ function Emprestimos() {
 
     async function registrarEmprestimo(event) {
 
-        event.preventDefault()
-
-        setErroFormulario("")
+        event.preventDefault();
 
 
-        // -------------------------------------------------
-        // VALIDA PROFESSOR
-        // -------------------------------------------------
+        setErroFormulario("");
+
+
+        const quantidadeNumerica =
+            Number(quantidade);
+
+
+        // -----------------------------------------------------
+        // VALIDAÇÕES
+        // -----------------------------------------------------
 
         if (!professorSelecionado) {
 
             setErroFormulario(
-                "Selecione um professor."
-            )
+                "Selecione o professor."
+            );
 
-            return
+            return;
+
         }
-
-
-        // -------------------------------------------------
-        // VALIDA TURMA
-        // -------------------------------------------------
-
-        if (!turmaSelecionada) {
-
-            setErroFormulario(
-                "Selecione uma turma."
-            )
-
-            return
-        }
-
-
-        // -------------------------------------------------
-        // CONVERTE QUANTIDADE PARA NÚMERO
-        // -------------------------------------------------
-
-        const quantidadeNumero =
-            Number(quantidade)
 
 
         if (
-            !quantidadeNumero ||
-            quantidadeNumero <= 0
+            finalidade === "AULA" &&
+            !turmaSelecionada
         ) {
 
             setErroFormulario(
-                "Informe uma quantidade válida."
-            )
+                "Selecione a turma."
+            );
 
-            return
+            return;
+
         }
 
 
-        // -------------------------------------------------
-        // CONFERE SE TEM CHROMEBOOK DISPONÍVEL
-        // -------------------------------------------------
-
         if (
-            resumo &&
-            quantidadeNumero > resumo.disponiveis
+            !quantidade ||
+            quantidadeNumerica <= 0
         ) {
 
             setErroFormulario(
-                "A quantidade informada é maior que a quantidade disponível."
-            )
+                "Informe uma quantidade maior que zero."
+            );
 
-            return
+            return;
+
+        }
+
+
+        if (
+            quantidadeNumerica >
+            equipamentoSelecionado.disponivel
+        ) {
+
+            setErroFormulario(
+                `A quantidade informada é maior que a disponibilidade atual. ` +
+                `Disponíveis: ${equipamentoSelecionado.disponivel}.`
+            );
+
+            return;
+
         }
 
 
         try {
 
-            setSalvando(true)
+            setSalvando(true);
+
+
+            const dados = {
+
+                professor_id:
+                    Number(
+                        professorSelecionado
+                    ),
+
+                turma_id:
+                    finalidade === "AULA"
+                        ? Number(turmaSelecionada)
+                        : null,
+
+                quantidade:
+                    quantidadeNumerica,
+
+                tipo_equipamento:
+                    tipoEquipamento,
+
+                finalidade:
+                    finalidade
+
+            };
 
 
             console.log(
-                "[Empréstimos] Registrando empréstimo..."
-            )
-
-            console.log(
-                "[Empréstimos] Professor:",
-                professorSelecionado
-            )
-
-            console.log(
-                "[Empréstimos] Turma:",
-                turmaSelecionada
-            )
-
-            console.log(
-                "[Empréstimos] Quantidade:",
-                quantidadeNumero
-            )
+                "[EMPRESTIMOS] Registrando:",
+                dados
+            );
 
 
-            // -------------------------------------------------
-            // ENVIA O EMPRÉSTIMO PARA O BACKEND
-            // -------------------------------------------------
-
-            const resposta =
-                await api.post(
-                    "/emprestimos",
-                    {
-                        professor_id:
-                            Number(professorSelecionado),
-
-                        turma_id:
-                            Number(turmaSelecionada),
-
-                        quantidade:
-                            quantidadeNumero
-                    }
-                )
+            await api.post(
+                "/emprestimos",
+                dados
+            );
 
 
-            console.log(
-                "[Empréstimos] Empréstimo criado:",
-                resposta.data
-            )
+            setMensagemSucesso(
+                finalidade === "USO_PROPRIO"
+                    ? `${tipoEquipamento === "TABLET"
+                        ? "Tablets"
+                        : "Chromebooks"
+                    } registrados para uso próprio com sucesso.`
+                    : `${tipoEquipamento === "TABLET"
+                        ? "Tablets"
+                        : "Chromebooks"
+                    } emprestados com sucesso.`
+            );
 
 
-            // Atualiza os cards e a tabela
-            await carregarEmprestimos()
+            fecharModal();
 
-            // Fecha o modal
-            fecharModal()
 
-        } catch (error) {
+            await carregarDados();
+
+
+        } catch (erro) {
 
             console.error(
-                "[Empréstimos] Erro ao registrar:",
-                error
-            )
+                "[EMPRESTIMOS] Erro ao registrar:",
+                erro
+            );
+
 
             setErroFormulario(
-                error.response?.data?.mensagem ||
+                erro.response?.data?.mensagem ||
                 "Não foi possível registrar o empréstimo."
-            )
+            );
 
         } finally {
 
-            setSalvando(false)
+            setSalvando(false);
+
         }
+
     }
 
 
@@ -427,87 +722,215 @@ function Emprestimos() {
 
     async function devolverEmprestimo(id) {
 
+        const confirmar =
+            window.confirm(
+                "Deseja registrar a devolução deste empréstimo?"
+            );
+
+
+        if (!confirmar) {
+            return;
+        }
+
+
         try {
 
+            setDevolvendoId(id);
+
+            setErro("");
+
+
             console.log(
-                "[Empréstimos] Devolvendo empréstimo:",
-                id
-            )
+                `[EMPRESTIMOS] Devolvendo empréstimo ${id}.`
+            );
 
 
             await api.post(
                 `/emprestimos/${id}/devolver`
-            )
+            );
 
 
-            console.log(
-                "[Empréstimos] Empréstimo devolvido."
-            )
+            setMensagemSucesso(
+                "Devolução registrada com sucesso."
+            );
 
 
-            // Atualiza a tabela depois da devolução
-            await carregarEmprestimos()
+            await carregarDados();
 
-        } catch (error) {
+
+        } catch (erro) {
 
             console.error(
-                "[Empréstimos] Erro ao devolver:",
-                error
-            )
+                "[EMPRESTIMOS] Erro ao devolver:",
+                erro
+            );
+
 
             setErro(
-                "Não foi possível devolver o empréstimo."
-            )
+                erro.response?.data?.mensagem ||
+                "Não foi possível registrar a devolução."
+            );
+
+        } finally {
+
+            setDevolvendoId(null);
+
         }
+
     }
 
 
     // =========================================================
-    // FILTRO DA TABELA
+    // FORMATAR DATA
     // =========================================================
 
-    const emprestimosFiltrados =
-        emprestimos.filter((emprestimo) => {
+    function formatarData(data) {
 
-            const texto =
-                busca.toLowerCase()
+        if (!data) {
+            return "-";
+        }
 
-            return (
 
-                emprestimo.professor
-                    ?.toLowerCase()
-                    .includes(texto)
+        const dataFormatada =
+            new Date(data);
 
-                ||
 
-                emprestimo.turma
-                    ?.toLowerCase()
-                    .includes(texto)
-
+        if (
+            Number.isNaN(
+                dataFormatada.getTime()
             )
-        })
+        ) {
+
+            return "-";
+
+        }
+
+
+        return dataFormatada.toLocaleDateString(
+            "pt-BR",
+            {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric"
+            }
+        );
+
+    }
 
 
     // =========================================================
-    // JSX DA PÁGINA
+    // NOME DO EQUIPAMENTO
+    // =========================================================
+
+    function nomeEquipamento(tipo) {
+
+        if (tipo === "TABLET") {
+            return "Tablet";
+        }
+
+
+        return "Chromebook";
+
+    }
+
+
+    // =========================================================
+    // ÍCONE DO EQUIPAMENTO
+    // =========================================================
+
+    function iconeEquipamento(tipo) {
+
+        if (tipo === "TABLET") {
+            return <Tablet size={16} />;
+        }
+
+
+        return <Laptop size={16} />;
+
+    }
+
+
+    // =========================================================
+    // CLASSE DO EQUIPAMENTO
+    // =========================================================
+
+    function classeEquipamento(tipo) {
+
+        if (tipo === "TABLET") {
+            return "equipamento-tablet";
+        }
+
+
+        return "equipamento-chromebook";
+
+    }
+
+
+    // =========================================================
+    // NOME DA FINALIDADE
+    // =========================================================
+
+    function nomeFinalidade(finalidadeEmprestimo) {
+
+        if (
+            finalidadeEmprestimo ===
+            "USO_PROPRIO"
+        ) {
+
+            return "Uso próprio";
+
+        }
+
+
+        return "Aula";
+
+    }
+
+
+    // =========================================================
+    // CARREGANDO
+    // =========================================================
+
+    if (carregando) {
+
+        return (
+
+            <main className="emprestimos">
+
+                <div className="relatorios-loading">
+
+                    <RefreshCw
+                        size={22}
+                        className="relatorios-loading-icon"
+                    />
+
+                    <span>
+                        Carregando empréstimos...
+                    </span>
+
+                </div>
+
+            </main>
+
+        );
+
+    }
+
+
+    // =========================================================
+    // PÁGINA
     // =========================================================
 
     return (
 
-        // =====================================================
-        // CONTAINER PRINCIPAL
-        // IMPORTANTE:
-        // Seu CSS usa .emprestimos
-        // =====================================================
-
-        <div className="emprestimos">
+        <main className="emprestimos">
 
 
-            {/* =================================================
+            {/* =====================================================
                 CABEÇALHO
-            ================================================= */}
+            ====================================================== */}
 
-            <div className="pagina-cabecalho">
+            <header className="emprestimos-cabecalho">
 
                 <div>
 
@@ -516,50 +939,96 @@ function Emprestimos() {
                     </h1>
 
                     <p>
-                        Controle os Chromebooks que estão em uso.
+                        Controle de retirada e devolução dos equipamentos.
                     </p>
 
                 </div>
 
 
-                <button
-                    type="button"
-                    className="botao"
-                    onClick={abrirModal}
-                >
+                <div className="emprestimos-acoes">
 
-                    <Plus size={18} />
+                    <button
+                        className="botao-atualizar"
+                        onClick={carregarDados}
+                    >
 
-                    Novo empréstimo
+                        <RefreshCw size={17} />
 
-                </button>
+                        Atualizar
 
-            </div>
+                    </button>
 
 
-            {/* =================================================
-                ERRO DA PÁGINA
-            ================================================= */}
+                    <button
+                        className="botao-novo-emprestimo"
+                        onClick={abrirModal}
+                    >
 
-            {erro && (
+                        <Plus size={18} />
 
-                <div className="emprestimos-erro">
+                        Novo empréstimo
 
-                    {erro}
+                    </button>
+
+                </div>
+
+            </header>
+
+
+            {/* =====================================================
+                MENSAGEM DE SUCESSO
+            ====================================================== */}
+
+            {mensagemSucesso && (
+
+                <div className="mensagem-sucesso">
+
+                    <span>
+                        {mensagemSucesso}
+                    </span>
 
                 </div>
 
             )}
 
 
-            {/* =================================================
-                CARDS DE RESUMO
-            ================================================= */}
+            {/* =====================================================
+                ERRO
+            ====================================================== */}
 
-            <div className="cards">
+            {erro && (
+
+                <div className="mensagem-erro">
+
+                    <AlertTriangle size={18} />
+
+                    <span>
+                        {erro}
+                    </span>
+
+                    <button
+                        onClick={() =>
+                            setErro("")
+                        }
+                    >
+
+                        <X size={16} />
+
+                    </button>
+
+                </div>
+
+            )}
 
 
-                {/* CARD TOTAL */}
+            {/* =====================================================
+                CARDS
+            ====================================================== */}
+
+            <section className="cards">
+
+
+                {/* CHROMEBOOKS */}
 
                 <div className="card">
 
@@ -570,75 +1039,115 @@ function Emprestimos() {
                     </div>
 
                     <span>
-                        Total de Chromebooks
+                        Chromebooks
                     </span>
 
                     <strong>
-                        {resumo?.totalChromebooks ?? 47}
+                        {disponibilidadeChromebook.total}
                     </strong>
+
+                    <small>
+                        {disponibilidadeChromebook.disponivel} disponíveis
+                    </small>
 
                 </div>
 
 
-
-                {/* CARD EMPRESTADOS */}
+                {/* TABLETS */}
 
                 <div className="card">
 
                     <div className="card-icone">
 
-                        <LaptopMinimal size={22} />
+                        <Tablet size={22} />
 
                     </div>
 
                     <span>
-                        Emprestados
+                        Tablets
                     </span>
 
                     <strong>
-                        {resumo?.emprestados ?? 0}
+                        {disponibilidadeTablet.total}
                     </strong>
+
+                    <small>
+                        {disponibilidadeTablet.disponivel} disponíveis
+                    </small>
 
                 </div>
 
 
-
-                {/* CARD DISPONÍVEIS */}
+                {/* DISPONIBILIDADE GERAL */}
 
                 <div className="card">
 
                     <div className="card-icone">
 
-                        <CheckCircle2 size={22} />
+                        <Laptop size={22} />
 
                     </div>
 
                     <span>
-                        Disponíveis
+                        Equipamentos disponíveis
                     </span>
 
                     <strong>
-                        {resumo?.disponiveis ?? 47}
+                        {totalDisponivel}
                     </strong>
 
+                    <small>
+                        {totalEmprestado} atualmente emprestados
+                    </small>
+
                 </div>
+
+            </section>
+
+
+            {/* =====================================================
+                RESUMO
+            ====================================================== */}
+
+            <div className="emprestimos-resumo">
+
+                <span>
+                    Total de equipamentos:
+                    <strong>
+                        {" "}
+                        {totalEquipamentos}
+                    </strong>
+                </span>
+
+                <span>
+                    Em uso:
+                    <strong>
+                        {" "}
+                        {totalEmprestado}
+                    </strong>
+                </span>
+
+                <span>
+                    Disponíveis:
+                    <strong>
+                        {" "}
+                        {totalDisponivel}
+                    </strong>
+                </span>
 
             </div>
 
 
+            {/* =====================================================
+                LISTA
+            ====================================================== */}
 
-            {/* =================================================
-                PAINEL DA TABELA
-            ================================================= */}
-
-            <div className="painel">
+            <section className="emprestimos-lista">
 
 
-                {/* =================================================
-                    CABEÇALHO DO PAINEL
-                ================================================= */}
+                {/* CABEÇALHO */}
 
-                <div className="painel-cabecalho">
+                <div className="lista-cabecalho">
 
                     <div>
 
@@ -647,26 +1156,24 @@ function Emprestimos() {
                         </h2>
 
                         <p>
-                            Chromebooks que estão atualmente em uso.
+                            Equipamentos que ainda não foram devolvidos.
                         </p>
 
                     </div>
 
 
-                    {/* =================================================
-                        CAMPO DE BUSCA
-                    ================================================= */}
-
-                    <div className="campo-busca">
+                    <div className="emprestimos-busca">
 
                         <Search size={17} />
 
                         <input
                             type="text"
-                            placeholder="Buscar professor ou turma..."
+                            placeholder="Buscar professor, turma ou equipamento..."
                             value={busca}
                             onChange={(event) =>
-                                setBusca(event.target.value)
+                                setBusca(
+                                    event.target.value
+                                )
                             }
                         />
 
@@ -675,214 +1182,209 @@ function Emprestimos() {
                 </div>
 
 
+                {/* TABELA */}
 
-                {/* =================================================
-                    TABELA
-                ================================================= */}
+                {emprestimosFiltrados.length === 0 ? (
 
-                <div className="tabela-container">
+                    <div className="lista-vazia">
 
-                    <table className="tabela">
+                        <Laptop size={30} />
 
+                        <strong>
+                            Nenhum empréstimo ativo
+                        </strong>
 
-                        {/* CABEÇALHO DAS COLUNAS */}
+                        <span>
+                            {busca
+                                ? "Nenhum empréstimo corresponde à busca."
+                                : "Não existem equipamentos emprestados no momento."
+                            }
+                        </span>
 
-                        <thead>
+                    </div>
 
-                            <tr>
+                ) : (
 
-                                <th>
-                                    Professor
-                                </th>
+                    <div className="tabela-container">
 
-                                <th>
-                                    Turma
-                                </th>
+                        <table>
 
-                                <th>
-                                    Quantidade
-                                </th>
-
-                                <th>
-                                    Data de retirada
-                                </th>
-
-                                <th>
-                                    Status
-                                </th>
-
-                                <th>
-                                    Ações
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-
-
-                        <tbody>
-
-
-                            {/* =================================================
-                                ESTADO DE CARREGAMENTO
-                            ================================================= */}
-
-                            {carregando ? (
+                            <thead>
 
                                 <tr>
 
-                                    <td
-                                        colSpan="6"
-                                        className="tabela-vazia"
-                                    >
-                                        Carregando empréstimos...
-                                    </td>
+                                    <th>
+                                        Equipamento
+                                    </th>
+
+                                    <th>
+                                        Finalidade
+                                    </th>
+
+                                    <th>
+                                        Professor
+                                    </th>
+
+                                    <th>
+                                        Turma
+                                    </th>
+
+                                    <th>
+                                        Quantidade
+                                    </th>
+
+                                    <th>
+                                        Retirada
+                                    </th>
+
+                                    <th>
+                                        Status
+                                    </th>
+
+                                    <th>
+                                        Ação
+                                    </th>
 
                                 </tr>
 
-
-                            ) : emprestimosFiltrados.length === 0 ? (
-
-
-                                /* =================================================
-                                    NENHUM EMPRÉSTIMO
-                                ================================================= */
-
-                                <tr>
-
-                                    <td
-                                        colSpan="6"
-                                        className="tabela-vazia"
-                                    >
-                                        Nenhum empréstimo ativo encontrado.
-                                    </td>
-
-                                </tr>
+                            </thead>
 
 
-                            ) : (
+                            <tbody>
 
-
-                                /* =================================================
-                                    MAP DA TABELA
-
-                                    É AQUI QUE CADA EMPRÉSTIMO VIRA UMA LINHA.
-
-                                    emprestimosFiltrados
-                                    ↓
-                                    empréstimo 1
-                                    empréstimo 2
-                                    empréstimo 3
-                                    ↓
-                                    <tr>
-                                    <tr>
-                                    <tr>
-
-                                    Se você quiser mudar o que aparece
-                                    em cada linha, é AQUI.
-                                ================================================= */
-
-                                emprestimosFiltrados.map(
+                                {emprestimosFiltrados.map(
                                     (emprestimo) => (
 
                                         <tr
-                                            key={emprestimo.id}
+                                            key={
+                                                emprestimo.id
+                                            }
                                         >
 
 
-                                            {/* ==============================
-                                                PROFESSOR
-                                            ============================== */}
+                                            {/* EQUIPAMENTO */}
 
                                             <td>
 
-                                                <strong>
-                                                    {emprestimo.professor || "-"}
-                                                </strong>
+                                                <span
+                                                    className={
+                                                        `equipamento-badge ` +
+                                                        classeEquipamento(
+                                                            emprestimo.tipo_equipamento
+                                                        )
+                                                    }
+                                                >
 
-                                            </td>
+                                                    {
+                                                        iconeEquipamento(
+                                                            emprestimo.tipo_equipamento
+                                                        )
+                                                    }
 
-
-
-                                            {/* ==============================
-                                                TURMA
-
-                                                O backend retorna:
-                                                emprestimo.turma
-
-                                                Exemplo:
-                                                "3A"
-                                            ============================== */}
-
-                                            <td>
-
-                                                {emprestimo.turma || "-"}
-
-                                            </td>
-
-
-
-                                            {/* ==============================
-                                                QUANTIDADE
-                                            ============================== */}
-
-                                            <td>
-
-                                                {emprestimo.quantidade}
-
-                                            </td>
-
-
-
-                                            {/* ==============================
-                                                DATA DA RETIRADA
-                                            ============================== */}
-
-                                            <td>
-
-                                                {emprestimo.data_retirada
-
-                                                    ? new Date(
-                                                        emprestimo.data_retirada
-                                                    ).toLocaleString(
-                                                        "pt-BR"
-                                                    )
-
-                                                    : "-"
-
-                                                }
-
-                                            </td>
-
-
-
-                                            {/* ==============================
-                                                STATUS
-                                            ============================== */}
-
-                                            <td>
-
-                                                <span className="status-ativo">
-
-                                                    Em uso
+                                                    {
+                                                        nomeEquipamento(
+                                                            emprestimo.tipo_equipamento
+                                                        )
+                                                    }
 
                                                 </span>
 
                                             </td>
 
 
+                                            {/* FINALIDADE */}
 
-                                            {/* ==============================
-                                                AÇÃO DE DEVOLVER
-                                            ============================== */}
+                                            <td>
+
+                                                <span>
+                                                    {
+                                                        nomeFinalidade(
+                                                            emprestimo.finalidade
+                                                        )
+                                                    }
+                                                </span>
+
+                                            </td>
+
+
+                                            {/* PROFESSOR */}
+
+                                            <td>
+
+                                                {
+                                                    emprestimo.professor ||
+                                                    "Não informado"
+                                                }
+
+                                            </td>
+
+
+                                            {/* TURMA */}
+
+                                            <td>
+
+                                                {
+                                                    emprestimo.turma ||
+                                                    (
+                                                        emprestimo.finalidade ===
+                                                        "USO_PROPRIO"
+                                                            ? "Não se aplica"
+                                                            : "Não informada"
+                                                    )
+                                                }
+
+                                            </td>
+
+
+                                            {/* QUANTIDADE */}
+
+                                            <td>
+
+                                                <strong>
+                                                    {
+                                                        emprestimo.quantidade
+                                                    }
+                                                </strong>
+
+                                            </td>
+
+
+                                            {/* DATA */}
+
+                                            <td>
+
+                                                {
+                                                    formatarData(
+                                                        emprestimo.data_retirada
+                                                    )
+                                                }
+
+                                            </td>
+
+
+                                            {/* STATUS */}
+
+                                            <td>
+
+                                                <span className="status-ativo">
+
+                                                    Ativo
+
+                                                </span>
+
+                                            </td>
+
+
+                                            {/* DEVOLVER */}
 
                                             <td>
 
                                                 <button
-                                                    type="button"
                                                     className="botao-devolver"
-                                                    title="Devolver Chromebooks"
+                                                    disabled={
+                                                        devolvendoId ===
+                                                        emprestimo.id
+                                                    }
                                                     onClick={() =>
                                                         devolverEmprestimo(
                                                             emprestimo.id
@@ -890,46 +1392,74 @@ function Emprestimos() {
                                                     }
                                                 >
 
-                                                    <RotateCcw size={16} />
+                                                    {devolvendoId ===
+                                                    emprestimo.id ? (
 
-                                                    Devolver
+                                                        <RefreshCw
+                                                            size={16}
+                                                            className="girando"
+                                                        />
+
+                                                    ) : (
+
+                                                        <RotateCcw
+                                                            size={16}
+                                                        />
+
+                                                    )}
+
+                                                    {devolvendoId ===
+                                                    emprestimo.id
+                                                        ? "Devolvendo..."
+                                                        : "Devolver"
+                                                    }
 
                                                 </button>
 
                                             </td>
 
-
                                         </tr>
 
                                     )
-                                )
+                                )}
 
-                            )}
+                            </tbody>
 
-                        </tbody>
+                        </table>
 
-                    </table>
+                    </div>
 
-                </div>
+                )}
 
-            </div>
+            </section>
 
 
-
-            {/* =================================================
-                MODAL
-            ================================================= */}
+            {/* =====================================================
+                MODAL NOVO EMPRÉSTIMO
+            ====================================================== */}
 
             {modalAberto && (
 
-                <div className="modal-fundo">
+                <div
+                    className="modal-overlay"
+                    onMouseDown={(event) => {
 
-                    <div className="modal">
+                        if (
+                            event.target ===
+                            event.currentTarget
+                        ) {
+
+                            fecharModal();
+
+                        }
+
+                    }}
+                >
+
+                    <div className="modal-emprestimo">
 
 
-                        {/* =================================================
-                            CABEÇALHO DO MODAL
-                        ================================================= */}
+                        {/* CABEÇALHO DO MODAL */}
 
                         <div className="modal-cabecalho">
 
@@ -940,219 +1470,459 @@ function Emprestimos() {
                                 </h2>
 
                                 <p>
-                                    Registre a retirada de Chromebooks.
+                                    Registre a retirada de equipamentos.
                                 </p>
 
                             </div>
 
 
                             <button
-                                type="button"
                                 className="modal-fechar"
                                 onClick={fecharModal}
+                                disabled={salvando}
                             >
-                                ×
+
+                                <X size={20} />
+
                             </button>
 
                         </div>
 
 
-
-                        {/* =================================================
-                            FORMULÁRIO
-
-                            Seu CSS usa .formulario
-                        ================================================= */}
+                        {/* FORMULÁRIO */}
 
                         <form
-                            className="formulario"
-                            onSubmit={registrarEmprestimo}
+                            onSubmit={
+                                registrarEmprestimo
+                            }
                         >
 
 
-                            {/* =================================================
-                                ERRO DO MODAL
-                            ================================================= */}
+                            {/* FINALIDADE */}
 
-                            {erroFormulario && (
+                            <div className="formulario-campo">
 
-                                <div className="modal-erro">
+                                <label>
+                                    Finalidade
+                                </label>
 
-                                    {erroFormulario}
+
+                                <div className="tipo-equipamento-opcoes">
+
+                                    <button
+                                        type="button"
+                                        className={
+                                            `tipo-equipamento-opcao ` +
+                                            (
+                                                finalidade ===
+                                                "AULA"
+                                                    ? "selecionado"
+                                                    : ""
+                                            )
+                                        }
+                                        onClick={() =>
+                                            alterarFinalidade(
+                                                "AULA"
+                                            )
+                                        }
+                                        disabled={salvando}
+                                    >
+
+                                        <div>
+
+                                            <strong>
+                                                Para aula
+                                            </strong>
+
+                                            <span>
+                                                Vinculado a uma turma
+                                            </span>
+
+                                        </div>
+
+                                    </button>
+
+
+                                    <button
+                                        type="button"
+                                        className={
+                                            `tipo-equipamento-opcao ` +
+                                            (
+                                                finalidade ===
+                                                "USO_PROPRIO"
+                                                    ? "selecionado"
+                                                    : ""
+                                            )
+                                        }
+                                        onClick={() =>
+                                            alterarFinalidade(
+                                                "USO_PROPRIO"
+                                            )
+                                        }
+                                        disabled={salvando}
+                                    >
+
+                                        <div>
+
+                                            <strong>
+                                                Uso próprio
+                                            </strong>
+
+                                            <span>
+                                                Sem vínculo com turma
+                                            </span>
+
+                                        </div>
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+
+                            {/* TIPO DE EQUIPAMENTO */}
+
+                            <div className="formulario-campo">
+
+                                <label>
+                                    Tipo de equipamento
+                                </label>
+
+
+                                <div className="tipo-equipamento-opcoes">
+
+
+                                    <button
+                                        type="button"
+                                        className={
+                                            `tipo-equipamento-opcao ` +
+                                            (
+                                                tipoEquipamento ===
+                                                "CHROMEBOOK"
+                                                    ? "selecionado"
+                                                    : ""
+                                            )
+                                        }
+                                        onClick={() =>
+                                            setTipoEquipamento(
+                                                "CHROMEBOOK"
+                                            )
+                                        }
+                                        disabled={salvando}
+                                    >
+
+                                        <Laptop
+                                            size={20}
+                                        />
+
+                                        <div>
+
+                                            <strong>
+                                                Chromebook
+                                            </strong>
+
+                                            <span>
+                                                {
+                                                    disponibilidadeChromebook.disponivel
+                                                } disponíveis
+                                            </span>
+
+                                        </div>
+
+                                    </button>
+
+
+                                    <button
+                                        type="button"
+                                        className={
+                                            `tipo-equipamento-opcao ` +
+                                            (
+                                                tipoEquipamento ===
+                                                "TABLET"
+                                                    ? "selecionado"
+                                                    : ""
+                                            )
+                                        }
+                                        onClick={() =>
+                                            setTipoEquipamento(
+                                                "TABLET"
+                                            )
+                                        }
+                                        disabled={salvando}
+                                    >
+
+                                        <Tablet
+                                            size={20}
+                                        />
+
+                                        <div>
+
+                                            <strong>
+                                                Tablet
+                                            </strong>
+
+                                            <span>
+                                                {
+                                                    disponibilidadeTablet.disponivel
+                                                } disponíveis
+                                            </span>
+
+                                        </div>
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+
+                            {/* PROFESSOR */}
+
+                            <div className="formulario-campo">
+
+                                <label htmlFor="professor">
+
+                                    Professor
+
+                                    <span>
+                                        *
+                                    </span>
+
+                                </label>
+
+
+                                <select
+                                    id="professor"
+                                    value={
+                                        professorSelecionado
+                                    }
+                                    onChange={(event) =>
+                                        setProfessorSelecionado(
+                                            event.target.value
+                                        )
+                                    }
+                                    disabled={salvando}
+                                >
+
+                                    <option value="">
+                                        Selecione o professor
+                                    </option>
+
+
+                                    {professores.map(
+                                        (professor) => (
+
+                                            <option
+                                                key={
+                                                    professor.id
+                                                }
+                                                value={
+                                                    professor.id
+                                                }
+                                            >
+
+                                                {
+                                                    professor.nome
+                                                }
+
+                                            </option>
+
+                                        )
+                                    )}
+
+                                </select>
+
+                            </div>
+
+
+                            {/* TURMA */}
+
+                            {finalidade === "AULA" && (
+
+                                <div className="formulario-campo">
+
+                                    <label htmlFor="turma">
+
+                                        Turma
+
+                                        <span>
+                                            *
+                                        </span>
+
+                                    </label>
+
+
+                                    <select
+                                        id="turma"
+                                        value={
+                                            turmaSelecionada
+                                        }
+                                        onChange={(event) =>
+                                            setTurmaSelecionada(
+                                                event.target.value
+                                            )
+                                        }
+                                        disabled={salvando}
+                                    >
+
+                                        <option value="">
+                                            Selecione a turma
+                                        </option>
+
+
+                                        {turmas.map(
+                                            (turma) => (
+
+                                                <option
+                                                    key={
+                                                        turma.id
+                                                    }
+                                                    value={
+                                                        turma.id
+                                                    }
+                                                >
+
+                                                    {
+                                                        turma.nome
+                                                    }
+
+                                                </option>
+
+                                            )
+                                        )}
+
+                                    </select>
 
                                 </div>
 
                             )}
 
 
+                            {/* QUANTIDADE */}
 
-                            {/* =================================================
-                                PROFESSOR
-                            ================================================= */}
+                            <div className="formulario-campo">
 
-                            <div className="campo">
+                                <label htmlFor="quantidade">
 
-                                <label className="campo-label">
-                                    Professor
+                                    Quantidade
+
+                                    <span>
+                                        *
+                                    </span>
+
                                 </label>
 
-                                <select
-                                    className="campo-input"
-                                    value={professorSelecionado}
-                                    onChange={(event) =>
-                                        setProfessorSelecionado(
-                                            event.target.value
-                                        )
-                                    }
-                                >
-
-                                    <option value="">
-                                        Selecione um professor
-                                    </option>
-
-
-                                    {/* MAP DOS PROFESSORES */}
-
-                                    {professores.map(
-                                        (professor) => (
-
-                                            <option
-                                                key={professor.id}
-                                                value={professor.id}
-                                            >
-
-                                                {professor.nome}
-
-                                            </option>
-
-                                        )
-                                    )}
-
-                                </select>
-
-                            </div>
-
-
-
-                            {/* =================================================
-                                TURMA
-                            ================================================= */}
-
-                            <div className="campo">
-
-                                <label className="campo-label">
-                                    Turma
-                                </label>
-
-                                <select
-                                    className="campo-input"
-                                    value={turmaSelecionada}
-                                    onChange={(event) =>
-                                        setTurmaSelecionada(
-                                            event.target.value
-                                        )
-                                    }
-                                >
-
-                                    <option value="">
-                                        Selecione uma turma
-                                    </option>
-
-
-                                    {/* MAP DAS TURMAS */}
-
-                                    {turmas.map(
-                                        (turma) => (
-
-                                            <option
-                                                key={turma.id}
-                                                value={turma.id}
-                                            >
-
-                                                {turma.nome}
-
-                                            </option>
-
-                                        )
-                                    )}
-
-                                </select>
-
-                            </div>
-
-
-
-                            {/* =================================================
-                                QUANTIDADE
-                            ================================================= */}
-
-                            <div className="campo">
-
-                                <label className="campo-label">
-                                    Quantidade de Chromebooks
-                                </label>
 
                                 <input
-                                    className="campo-input"
+                                    id="quantidade"
                                     type="number"
                                     min="1"
                                     max={
-                                        resumo?.disponiveis ?? 47
+                                        equipamentoSelecionado.disponivel
                                     }
-                                    value={quantidade}
+                                    placeholder="Digite a quantidade"
+                                    value={
+                                        quantidade
+                                    }
                                     onChange={(event) =>
                                         setQuantidade(
                                             event.target.value
                                         )
                                     }
-                                    placeholder="Ex: 10"
+                                    disabled={salvando}
                                 />
 
+
+                                <small>
+
+                                    Disponíveis:
+                                    {" "}
+                                    <strong>
+                                        {
+                                            equipamentoSelecionado.disponivel
+                                        }
+                                    </strong>
+
+                                    {" "}
+                                    {
+                                        tipoEquipamento ===
+                                        "TABLET"
+                                            ? "tablets"
+                                            : "Chromebooks"
+                                    }
+
+                                </small>
+
                             </div>
 
 
+                            {/* ERRO DO FORMULÁRIO */}
 
-                            {/* =================================================
-                                DISPONIBILIDADE
-                            ================================================= */}
+                            {erroFormulario && (
 
-                            <div className="modal-disponibilidade">
+                                <div className="erro-formulario">
 
-                                <span>
-                                    Chromebooks disponíveis:
-                                </span>
+                                    <AlertTriangle
+                                        size={17}
+                                    />
 
-                                <strong>
-                                    {resumo?.disponiveis ?? 47}
-                                </strong>
+                                    <span>
+                                        {
+                                            erroFormulario
+                                        }
+                                    </span>
 
-                            </div>
+                                </div>
+
+                            )}
 
 
-
-                            {/* =================================================
-                                BOTÕES DO MODAL
-                            ================================================= */}
+                            {/* AÇÕES */}
 
                             <div className="modal-acoes">
 
                                 <button
                                     type="button"
-                                    className="botao"
-                                    onClick={fecharModal}
+                                    className="botao-cancelar"
+                                    onClick={
+                                        fecharModal
+                                    }
+                                    disabled={
+                                        salvando
+                                    }
                                 >
+
                                     Cancelar
+
                                 </button>
 
 
                                 <button
                                     type="submit"
-                                    className="botao"
-                                    disabled={salvando}
+                                    className="botao-salvar"
+                                    disabled={
+                                        salvando
+                                    }
                                 >
 
+                                    {salvando ? (
+
+                                        <RefreshCw
+                                            size={17}
+                                            className="girando"
+                                        />
+
+                                    ) : (
+
+                                        <Save
+                                            size={17}
+                                        />
+
+                                    )}
+
                                     {salvando
-                                        ? "Salvando..."
+                                        ? "Registrando..."
                                         : "Registrar empréstimo"
                                     }
 
@@ -1168,9 +1938,11 @@ function Emprestimos() {
 
             )}
 
-        </div>
-    )
+        </main>
+
+    );
+
 }
 
 
-export default Emprestimos
+export default Emprestimos;

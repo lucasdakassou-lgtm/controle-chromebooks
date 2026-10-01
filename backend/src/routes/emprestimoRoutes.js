@@ -1,6 +1,4 @@
-const express = require('express');
-
-const router = express.Router();
+const express = require("express");
 
 const {
     criarEmprestimo,
@@ -8,37 +6,34 @@ const {
     listarEmprestimosAtivos,
     devolverEmprestimo,
     verificarDisponibilidade
-} = require('../controllers/emprestimoController');
+} = require("../controllers/emprestimoController");
+
+const router = express.Router();
+
+console.log("[ROTAS] emprestimoRoutes carregado.");
 
 
-// ==========================================
-// ROTAS ESPECÍFICAS
-// ==========================================
+// ============================================================
+// EMPRÉSTIMOS
+// ============================================================
 
-// Ver Chromebooks disponíveis
-router.get('/disponibilidade', verificarDisponibilidade);
+router.get("/", listarEmprestimos);
 
-// Ver empréstimos ativos
-router.get('/ativos', listarEmprestimosAtivos);
+router.get("/ativos", listarEmprestimosAtivos);
 
+router.get("/disponibilidade", verificarDisponibilidade);
 
-// ==========================================
-// ROTAS GERAIS
-// ==========================================
-
-// Listar todos os empréstimos
-router.get('/', listarEmprestimos);
-
-// Criar empréstimo
-router.post('/', criarEmprestimo);
+router.post("/", criarEmprestimo);
 
 
-// ==========================================
-// AÇÕES
-// ==========================================
+// ============================================================
+// DEVOLUÇÃO
+// ============================================================
 
-// Registrar devolução
-router.post('/:id/devolver', devolverEmprestimo);
+router.post(
+    "/:id/devolver",
+    devolverEmprestimo
+);
 
 
 module.exports = router;

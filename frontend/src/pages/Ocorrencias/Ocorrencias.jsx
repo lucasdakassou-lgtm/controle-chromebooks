@@ -16,28 +16,23 @@ import {
 } from "lucide-react"
 
 import api from "../../services/api"
-
 import "./Ocorrencias.css"
 
 
 function Ocorrencias() {
 
     // =========================================================
-    // ESTADOS DA TELA
+    // DADOS DA PÁGINA
     // =========================================================
 
     const [ocorrencias, setOcorrencias] = useState([])
-
     const [professores, setProfessores] = useState([])
 
     const [busca, setBusca] = useState("")
-
     const [filtroStatus, setFiltroStatus] = useState("todos")
 
     const [carregando, setCarregando] = useState(true)
-
     const [erro, setErro] = useState("")
-
     const [mensagemSucesso, setMensagemSucesso] = useState("")
 
 
@@ -46,22 +41,13 @@ function Ocorrencias() {
     // =========================================================
 
     const [modalAberto, setModalAberto] = useState(false)
-
     const [salvando, setSalvando] = useState(false)
-
     const [erroFormulario, setErroFormulario] = useState("")
 
-
-    // =========================================================
-    // FORMULÁRIO DE NOVA OCORRÊNCIA
-    // =========================================================
-
     const [professorSelecionado, setProfessorSelecionado] = useState("")
-
     const [sala, setSala] = useState("")
-
+    const [dataAbertura, setDataAbertura] = useState("")
     const [tipo, setTipo] = useState("")
-
     const [descricao, setDescricao] = useState("")
 
 
@@ -70,12 +56,8 @@ function Ocorrencias() {
     // =========================================================
 
     const [modalStatusAberto, setModalStatusAberto] = useState(false)
-
-    const [ocorrenciaSelecionada, setOcorrenciaSelecionada] =
-        useState(null)
-
+    const [ocorrenciaSelecionada, setOcorrenciaSelecionada] = useState(null)
     const [novoStatus, setNovoStatus] = useState("")
-
     const [salvandoStatus, setSalvandoStatus] = useState(false)
 
 
@@ -87,22 +69,7 @@ function Ocorrencias() {
 
 
     // =========================================================
-    // CARREGAMENTO INICIAL
-    // =========================================================
-
-    useEffect(() => {
-
-        console.log("[Ocorrências] Tela iniciada.")
-
-        carregarOcorrencias()
-
-        carregarProfessores()
-
-    }, [])
-
-
-    // =========================================================
-    // BUSCAR OCORRÊNCIAS
+    // CARREGAR OCORRÊNCIAS
     // =========================================================
 
     async function carregarOcorrencias() {
@@ -110,39 +77,21 @@ function Ocorrencias() {
         try {
 
             setCarregando(true)
-
             setErro("")
-
-            console.log(
-                "[Ocorrências] Buscando ocorrências na API..."
-            )
 
             const resposta = await api.get("/ocorrencias")
 
-            console.log(
-                "[Ocorrências] Resposta da API:",
-                resposta.data
-            )
-
             const dados = resposta.data
 
-            const lista = Array.isArray(dados)
-                ? dados
-                : dados.ocorrencias || dados.dados || []
-
-            console.log(
-                "[Ocorrências] Total recebido:",
-                lista.length
+            setOcorrencias(
+                dados.ocorrencias ||
+                dados.dados ||
+                []
             )
-
-            setOcorrencias(lista)
 
         } catch (error) {
 
-            console.error(
-                "[Ocorrências] Erro ao carregar ocorrências:",
-                error
-            )
+            console.error("[OCORRENCIAS] Erro ao carregar:", error)
 
             setErro(
                 error.response?.data?.mensagem ||
@@ -158,90 +107,103 @@ function Ocorrencias() {
 
 
     // =========================================================
-    // BUSCAR PROFESSORES
+    // CARREGAR PROFESSORES
     // =========================================================
 
     async function carregarProfessores() {
 
         try {
 
-            console.log(
-                "[Ocorrências] Buscando professores..."
-            )
-
             const resposta = await api.get("/professores")
-
-            console.log(
-                "[Ocorrências] Resposta dos professores:",
-                resposta.data
-            )
 
             const dados = resposta.data
 
-            const lista = Array.isArray(dados)
-                ? dados
-                : dados.professores || dados.dados || []
-
-            console.log(
-                "[Ocorrências] Professores encontrados:",
-                lista.length
+            setProfessores(
+                dados.professores ||
+                dados.dados ||
+                dados ||
+                []
             )
-
-            setProfessores(lista)
 
         } catch (error) {
 
-            console.error(
-                "[Ocorrências] Erro ao carregar professores:",
-                error
-            )
+            console.error("[OCORRENCIAS] Erro ao carregar professores:", error)
 
         }
     }
 
 
     // =========================================================
-    // ABRIR MODAL DE NOVA OCORRÊNCIA
+    // CARREGAMENTO INICIAL
+    // =========================================================
+
+    useEffect(() => {
+
+        carregarOcorrencias()
+        carregarProfessores()
+
+    }, [])
+
+
+    // =========================================================
+    // DATA DE HOJE
+    // =========================================================
+
+    function obterDataAtual() {
+
+        const hoje = new Date()
+
+        const ano = hoje.getFullYear()
+        const mes = String(hoje.getMonth() + 1).padStart(2, "0")
+        const dia = String(hoje.getDate()).padStart(2, "0")
+
+        return `${ano}-${mes}-${dia}`
+    }
+
+
+    // =========================================================
+    // ABRIR MODAL
     // =========================================================
 
     function abrirModal() {
 
-        console.log(
-            "[Ocorrências] Abrindo formulário de nova ocorrência."
-        )
-
         setProfessorSelecionado("")
-
         setSala("")
-
+        setDataAbertura(obterDataAtual())
         setTipo("")
-
         setDescricao("")
 
         setErroFormulario("")
+        setMensagemSucesso("")
 
         setModalAberto(true)
     }
 
 
     // =========================================================
-    // FECHAR MODAL DE NOVA OCORRÊNCIA
+    // FECHAR MODAL
     // =========================================================
 
     function fecharModal() {
 
-        console.log(
-            "[Ocorrências] Fechando formulário."
-        )
+        if (salvando) {
+            return
+        }
 
         setModalAberto(false)
+
+        setProfessorSelecionado("")
+        setSala("")
+        setDataAbertura("")
+        setTipo("")
+        setDescricao("")
 
         setErroFormulario("")
     }
 
 
     // =========================================================
-    // CADASTRAR OCORRÊNCIA
+    // REGISTRAR OCORRÊNCIA
     // =========================================================
 
     async function registrarOcorrencia(event) {
@@ -249,117 +211,105 @@ function Ocorrencias() {
         event.preventDefault()
 
         setErroFormulario("")
-
         setMensagemSucesso("")
 
 
-        // -----------------------------------------------------
-        // VALIDAÇÕES
-        // -----------------------------------------------------
+        // ---------------------------------------------
+        // VALIDAÇÕES DO FORMULÁRIO
+        // ---------------------------------------------
 
         if (!professorSelecionado) {
 
             setErroFormulario(
-                "Selecione o professor relacionado à ocorrência."
+                "Selecione o professor responsável pela ocorrência."
             )
 
             return
         }
-
 
         if (!sala.trim()) {
 
             setErroFormulario(
-                "Informe a sala onde ocorreu o problema."
+                "Informe a sala da ocorrência."
             )
 
             return
         }
 
-
-        if (!tipo) {
+        if (!dataAbertura) {
 
             setErroFormulario(
-                "Selecione o tipo da ocorrência."
+                "Informe a data da ocorrência."
             )
 
             return
         }
 
+        if (!tipo.trim()) {
+
+            setErroFormulario(
+                "Informe o tipo do problema."
+            )
+
+            return
+        }
 
         if (!descricao.trim()) {
 
             setErroFormulario(
-                "Descreva o problema encontrado."
+                "Informe a descrição da ocorrência."
             )
 
             return
         }
 
 
-        // -----------------------------------------------------
-        // ENVIO PARA API
-        // -----------------------------------------------------
+        // ---------------------------------------------
+        // DADOS ENVIADOS PARA A API
+        // ---------------------------------------------
+
+        const dados = {
+
+            professor_id: Number(professorSelecionado),
+
+            sala: sala.trim(),
+
+            data_abertura: dataAbertura,
+
+            tipo: tipo.trim(),
+
+            descricao: descricao.trim()
+        }
+
 
         try {
 
             setSalvando(true)
 
-            console.log(
-                "[Ocorrências] Iniciando cadastro..."
-            )
-
-
-            const dados = {
-
-                professor_id: Number(professorSelecionado),
-
-                sala: sala.trim(),
-
-                tipo,
-
-                descricao: descricao.trim()
-
-            }
-
+            await api.post("/ocorrencias", dados)
 
             console.log(
-                "[Ocorrências] Dados enviados:",
-                dados
+                "[OCORRENCIAS] Ocorrência registrada com sucesso."
             )
 
 
-            const resposta = await api.post(
-                "/ocorrencias",
-                dados
-            )
-
-
-            console.log(
-                "[Ocorrências] Cadastro realizado:",
-                resposta.data
-            )
-
-
-            // O backend já define o status inicial.
+            // Atualiza a tabela depois de cadastrar
             await carregarOcorrencias()
-
-
-            fecharModal()
 
 
             setMensagemSucesso(
                 "Ocorrência registrada com sucesso."
             )
 
+            fecharModal()
+
 
         } catch (error) {
 
             console.error(
-                "[Ocorrências] Erro ao registrar:",
+                "[OCORRENCIAS] Erro ao registrar:",
                 error
             )
-
 
             setErroFormulario(
                 error.response?.data?.mensagem ||
@@ -380,19 +330,11 @@ function Ocorrencias() {
 
     function abrirModalStatus(ocorrencia) {
 
-        console.log(
-            "[Ocorrências] Alterando status da ocorrência:",
-            ocorrencia.id
-        )
-
-
         setOcorrenciaSelecionada(ocorrencia)
 
         setNovoStatus(
-            ocorrencia.status || "RESOLVIDA"
+            ocorrencia.status || "ABERTA"
         )
-
-        setErro("")
 
         setModalStatusAberto(true)
     }
@@ -404,12 +346,14 @@ function Ocorrencias() {
 
     function fecharModalStatus() {
 
+        if (salvandoStatus) {
+            return
+        }
+
         setModalStatusAberto(false)
 
         setOcorrenciaSelecionada(null)
-
         setNovoStatus("")
-
     }
 
 
@@ -420,58 +364,42 @@ function Ocorrencias() {
     async function alterarStatus() {
 
         if (!ocorrenciaSelecionada) {
-
             return
         }
 
+        if (!novoStatus) {
+            return
+        }
 
         try {
 
             setSalvandoStatus(true)
 
-            setErro("")
-
-            console.log(
-                "[Ocorrências] Salvando novo status:",
-                {
-                    id: ocorrenciaSelecionada.id,
-                    status: novoStatus
-                }
-            )
-
-
-            const resposta = await api.put(
+            await api.put(
                 `/ocorrencias/${ocorrenciaSelecionada.id}`,
                 {
                     status: novoStatus
                 }
             )
 
-
             console.log(
-                "[Ocorrências] Status atualizado:",
-                resposta.data
+                "[OCORRENCIAS] Status atualizado."
             )
-
 
             await carregarOcorrencias()
 
-
-            fecharModalStatus()
-
-
             setMensagemSucesso(
-                "Status da ocorrência atualizado com sucesso."
+                "Status atualizado com sucesso."
             )
 
+            fecharModalStatus()
 
         } catch (error) {
 
             console.error(
-                "[Ocorrências] Erro ao alterar status:",
+                "[OCORRENCIAS] Erro ao alterar status:",
                 error
             )
-
 
             setErro(
                 error.response?.data?.mensagem ||
@@ -496,56 +424,32 @@ function Ocorrencias() {
             "Tem certeza que deseja excluir esta ocorrência?"
         )
 
-
         if (!confirmar) {
-
-            console.log(
-                "[Ocorrências] Exclusão cancelada."
-            )
-
             return
         }
-
 
         try {
 
             setExcluindoId(id)
 
-            setErro("")
-
-
-            console.log(
-                "[Ocorrências] Excluindo ocorrência:",
-                id
-            )
-
-
-            const resposta = await api.delete(
-                `/ocorrencias/${id}`
-            )
-
+            await api.delete(`/ocorrencias/${id}`)
 
             console.log(
-                "[Ocorrências] Ocorrência excluída:",
-                resposta.data
+                "[OCORRENCIAS] Ocorrência excluída."
             )
-
 
             await carregarOcorrencias()
-
 
             setMensagemSucesso(
                 "Ocorrência excluída com sucesso."
             )
 
-
         } catch (error) {
 
             console.error(
-                "[Ocorrências] Erro ao excluir:",
+                "[OCORRENCIAS] Erro ao excluir:",
                 error
             )
-
 
             setErro(
                 error.response?.data?.mensagem ||
@@ -561,134 +465,137 @@ function Ocorrencias() {
 
 
     // =========================================================
-    // FILTRO DA TABELA
+    // FILTRO DAS OCORRÊNCIAS
     // =========================================================
 
     const ocorrenciasFiltradas = useMemo(() => {
 
-        const texto = busca.toLowerCase().trim()
-
-
         return ocorrencias.filter((ocorrencia) => {
 
-            const textoOcorrencia = [
-
-                ocorrencia.professor,
-
-                ocorrencia.professor_nome,
-
-                ocorrencia.sala,
-
-                ocorrencia.tipo,
-
-                ocorrencia.descricao
-
-            ]
-                .filter(Boolean)
-                .join(" ")
+            const textoBusca = busca
                 .toLowerCase()
+                .trim()
 
+           const nomeProfessor =
+    typeof ocorrencia.professor === "string"
+        ? ocorrencia.professor
+        : ocorrencia.professor?.nome ||
+          ocorrencia.professor_nome ||
+          "Não informado"
 
             const correspondeBusca =
-                textoOcorrencia.includes(texto)
+                !textoBusca ||
+                nomeProfessor.toLowerCase().includes(textoBusca) ||
+                String(ocorrencia.sala || "")
+                    .toLowerCase()
+                    .includes(textoBusca) ||
+                String(ocorrencia.tipo || "")
+                    .toLowerCase()
+                    .includes(textoBusca) ||
+                String(ocorrencia.descricao || "")
+                    .toLowerCase()
+                    .includes(textoBusca)
 
+            const statusOcorrencia =
+                String(ocorrencia.status || "")
+                    .toLowerCase()
 
             const correspondeStatus =
                 filtroStatus === "todos" ||
-                ocorrencia.status === filtroStatus
+                statusOcorrencia === filtroStatus.toLowerCase()
 
-
-            return (
-                correspondeBusca &&
-                correspondeStatus
-            )
-
+            return correspondeBusca && correspondeStatus
         })
 
-    }, [
-        ocorrencias,
-        busca,
-        filtroStatus
-    ])
+    }, [ocorrencias, busca, filtroStatus])
 
 
     // =========================================================
-    // INDICADORES
+    // RESUMO DOS STATUS
     // =========================================================
 
-    const totalOcorrencias =
-        ocorrencias.length
+    const totalOcorrencias = ocorrencias.length
 
+    const ocorrenciasAbertas = ocorrencias.filter(
+        (ocorrencia) =>
+            ocorrencia.status === "ABERTA"
+    ).length
 
-    const abertas =
-        ocorrencias.filter(
-            (ocorrencia) =>
-                ocorrencia.status === "ABERTA"
-        ).length
+    const ocorrenciasAndamento = ocorrencias.filter(
+        (ocorrencia) =>
+            ocorrencia.status === "EM_ANDAMENTO"
+    ).length
 
-
-    const andamento =
-        ocorrencias.filter(
-            (ocorrencia) =>
-                ocorrencia.status === "EM_ANDAMENTO"
-        ).length
-
-
-    const resolvidas =
-        ocorrencias.filter(
-            (ocorrencia) =>
-                ocorrencia.status === "RESOLVIDA"
-        ).length
+    const ocorrenciasResolvidas = ocorrencias.filter(
+        (ocorrencia) =>
+            ocorrencia.status === "RESOLVIDA"
+    ).length
 
 
     // =========================================================
-    // MOSTRAR STATUS
+    // STATUS
     // =========================================================
 
-    function mostrarStatus(status) {
+    function textoStatus(status) {
 
-        if (status === "RESOLVIDA") {
-
-            return (
-
-                <span className="status-ocorrencia status-resolvida">
-
-                    <CheckCircle2 size={14} />
-
-                    Resolvida
-
-                </span>
-
-            )
+        if (status === "ABERTA") {
+            return "Aberta"
         }
-
 
         if (status === "EM_ANDAMENTO") {
-
-            return (
-
-                <span className="status-ocorrencia status-andamento">
-
-                    <Clock3 size={14} />
-
-                    Em andamento
-
-                </span>
-
-            )
+            return "Em andamento"
         }
 
+        if (status === "RESOLVIDA") {
+            return "Resolvida"
+        }
 
-        return (
+        return status || "-"
+    }
 
-            <span className="status-ocorrencia status-aberta">
 
-                <AlertTriangle size={14} />
+    function classeStatus(status) {
 
-                Aberta
+        if (status === "ABERTA") {
+            return "status-aberta"
+        }
 
-            </span>
+        if (status === "EM_ANDAMENTO") {
+            return "status-andamento"
+        }
 
+        if (status === "RESOLVIDA") {
+            return "status-resolvida"
+        }
+
+        return ""
+    }
+
+
+    // =========================================================
+    // DATA FORMATADA
+    // =========================================================
+
+    function formatarData(data) {
+
+        if (!data) {
+            return "-"
+        }
+
+        const dataFormatada = new Date(data)
+
+        if (Number.isNaN(dataFormatada.getTime())) {
+            return "-"
+        }
+
+        return dataFormatada.toLocaleString(
+            "pt-BR",
+            {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+
+            }
         )
     }
 
@@ -701,70 +608,68 @@ function Ocorrencias() {
 
         <div className="ocorrencias">
 
-
-            {/* =================================================
+            {/* =====================================================
                 CABEÇALHO
-            ================================================= */}
+            ====================================================== */}
 
-            <header className="ocorrencias-cabecalho">
+            <div className="pagina-cabecalho">
 
                 <div>
 
-                    <span className="ocorrencias-overline">
-                        ATENDIMENTO PROATI
-                    </span>
-
-                    <h1>
-                        Ocorrências
-                    </h1>
+                    <h1>Ocorrências</h1>
 
                     <p>
-                        Registre, acompanhe e resolva problemas
-                        identificados no ambiente escolar.
+                        Registre e acompanhe problemas atendidos pelo PROATI.
                     </p>
 
                 </div>
 
 
-                <button
-                    type="button"
-                    className="botao botao-principal"
-                    onClick={abrirModal}
-                >
+                <div className="pagina-acoes">
 
-                    <Plus size={18} />
+                    <button
+                        className="botao-secundario"
+                        onClick={carregarOcorrencias}
+                        disabled={carregando}
+                    >
+                        <RefreshCw size={18} />
 
-                    Nova ocorrência
-
-                </button>
-
-            </header>
+                        Atualizar
+                    </button>
 
 
-            {/* =================================================
+                    <button
+                        className="botao-principal"
+                        onClick={abrirModal}
+                    >
+                        <Plus size={18} />
+
+                        Nova ocorrência
+                    </button>
+
+                </div>
+
+            </div>
+
+
+            {/* =====================================================
                 MENSAGEM DE SUCESSO
-            ================================================= */}
+            ====================================================== */}
 
             {mensagemSucesso && (
 
                 <div className="mensagem-sucesso">
 
-                    <CheckCircle2 size={17} />
+                    <CheckCircle2 size={18} />
 
                     <span>
                         {mensagemSucesso}
                     </span>
 
-
                     <button
-                        type="button"
-                        onClick={() =>
-                            setMensagemSucesso("")
-                        }
+                        onClick={() => setMensagemSucesso("")}
                     >
-
                         <X size={16} />
-
                     </button>
 
                 </div>
@@ -772,28 +677,24 @@ function Ocorrencias() {
             )}
 
 
-            {/* =================================================
-                MENSAGEM DE ERRO
-            ================================================= */}
+            {/* =====================================================
+                ERRO GERAL
+            ====================================================== */}
 
             {erro && (
 
                 <div className="mensagem-erro">
 
-                    <AlertTriangle size={17} />
+                    <AlertTriangle size={18} />
 
                     <span>
                         {erro}
                     </span>
 
-
                     <button
-                        type="button"
                         onClick={() => setErro("")}
                     >
-
                         <X size={16} />
-
                     </button>
 
                 </div>
@@ -801,264 +702,189 @@ function Ocorrencias() {
             )}
 
 
-            {/* =================================================
-                CARDS
-            ================================================= */}
+            {/* =====================================================
+                CARDS DE RESUMO
+            ====================================================== */}
 
-            <section className="cards">
+            <div className="cards-resumo">
 
+                <div className="card-resumo">
 
-                <div className="card">
+                    <div className="card-resumo-icone">
 
-                    <div className="card-icone card-icone-roxo">
-
-                        <ClipboardList size={21} />
-
-                    </div>
-
-
-                    <div className="card-conteudo">
-
-                        <span>
-                            Total de ocorrências
-                        </span>
-
-                        <strong>
-                            {totalOcorrencias}
-                        </strong>
+                        <ClipboardList size={22} />
 
                     </div>
+
+                    <span>
+                        Total de ocorrências
+                    </span>
+
+                    <strong>
+                        {totalOcorrencias}
+                    </strong>
 
                 </div>
 
 
-                <div className="card">
+                <div className="card-resumo">
 
-                    <div className="card-icone card-icone-laranja">
+                    <div className="card-resumo-icone">
 
-                        <AlertTriangle size={21} />
-
-                    </div>
-
-
-                    <div className="card-conteudo">
-
-                        <span>
-                            Em aberto
-                        </span>
-
-                        <strong>
-                            {abertas}
-                        </strong>
+                        <AlertTriangle size={22} />
 
                     </div>
+
+                    <span>
+                        Abertas
+                    </span>
+
+                    <strong>
+                        {ocorrenciasAbertas}
+                    </strong>
 
                 </div>
 
 
-                <div className="card">
+                <div className="card-resumo">
 
-                    <div className="card-icone card-icone-azul">
+                    <div className="card-resumo-icone">
 
-                        <Clock3 size={21} />
-
-                    </div>
-
-
-                    <div className="card-conteudo">
-
-                        <span>
-                            Em andamento
-                        </span>
-
-                        <strong>
-                            {andamento}
-                        </strong>
+                        <Clock3 size={22} />
 
                     </div>
+
+                    <span>
+                        Em andamento
+                    </span>
+
+                    <strong>
+                        {ocorrenciasAndamento}
+                    </strong>
 
                 </div>
 
 
-                <div className="card">
+                <div className="card-resumo">
 
-                    <div className="card-icone card-icone-verde">
+                    <div className="card-resumo-icone">
 
-                        <CheckCircle2 size={21} />
-
-                    </div>
-
-
-                    <div className="card-conteudo">
-
-                        <span>
-                            Resolvidas
-                        </span>
-
-                        <strong>
-                            {resolvidas}
-                        </strong>
+                        <CheckCircle2 size={22} />
 
                     </div>
+
+                    <span>
+                        Resolvidas
+                    </span>
+
+                    <strong>
+                        {ocorrenciasResolvidas}
+                    </strong>
+
+                </div>
+
+            </div>
+
+
+            {/* =====================================================
+                FILTROS
+            ====================================================== */}
+
+            <div className="filtros">
+
+                <div className="campo-busca">
+
+                    <Search size={18} />
+
+                    <input
+                        type="text"
+                        placeholder="Buscar ocorrência..."
+                        value={busca}
+                        onChange={(event) =>
+                            setBusca(event.target.value)
+                        }
+                    />
 
                 </div>
 
 
-            </section>
+                <select
+                    className="filtro-status"
+                    value={filtroStatus}
+                    onChange={(event) =>
+                        setFiltroStatus(event.target.value)
+                    }
+                >
+
+                    <option value="todos">
+                        Todos os status
+                    </option>
+
+                    <option value="aberta">
+                        Abertas
+                    </option>
+
+                    <option value="em_andamento">
+                        Em andamento
+                    </option>
+
+                    <option value="resolvida">
+                        Resolvidas
+                    </option>
+
+                </select>
+
+            </div>
 
 
-            {/* =================================================
-                PAINEL PRINCIPAL
-            ================================================= */}
+            {/* =====================================================
+                TABELA
+            ====================================================== */}
 
-            <section className="painel">
+            <div className="tabela-container">
 
+                {carregando ? (
 
-                <div className="painel-cabecalho">
+                    <div className="estado-tabela">
 
-                    <div>
-
-                        <h2>
-                            Registro de ocorrências
-                        </h2>
-
-                        <p>
-                            Consulte e acompanhe os atendimentos
-                            registrados pelo PROATI.
-                        </p>
-
-                    </div>
-
-
-                    <button
-                        type="button"
-                        className="botao-atualizar"
-                        onClick={carregarOcorrencias}
-                        title="Atualizar ocorrências"
-                    >
-
-                        <RefreshCw size={16} />
-
-                        Atualizar
-
-                    </button>
-
-                </div>
-
-
-                {/* =================================================
-                    FILTROS
-                ================================================= */}
-
-                <div className="ocorrencias-filtros">
-
-
-                    <div className="campo-busca">
-
-                        <Search size={17} />
-
-
-                        <input
-                            type="text"
-                            placeholder="Buscar professor, sala, tipo..."
-                            value={busca}
-                            onChange={(event) =>
-                                setBusca(
-                                    event.target.value
-                                )
-                            }
+                        <RefreshCw
+                            size={24}
+                            className="icone-carregando"
                         />
 
-
-                        {busca && (
-
-                            <button
-                                type="button"
-                                className="busca-limpar"
-                                onClick={() =>
-                                    setBusca("")
-                                }
-                                title="Limpar busca"
-                            >
-
-                                <X size={15} />
-
-                            </button>
-
-                        )}
-
-                    </div>
-
-
-                    <select
-                        className="ocorrencias-filtro-status"
-                        value={filtroStatus}
-                        onChange={(event) =>
-                            setFiltroStatus(
-                                event.target.value
-                            )
-                        }
-                    >
-
-                        <option value="todos">
-                            Todos os status
-                        </option>
-
-                        <option value="ABERTA">
-                            Em aberto
-                        </option>
-
-                        <option value="EM_ANDAMENTO">
-                            Em andamento
-                        </option>
-
-                        <option value="RESOLVIDA">
-                            Resolvidas
-                        </option>
-
-                    </select>
-
-                </div>
-
-
-                {/* =================================================
-                    RESULTADO
-                ================================================= */}
-
-                {!carregando && (
-
-                    <div className="resultado-filtro">
-
                         <span>
-
-                            {ocorrenciasFiltradas.length}
-
-                            {" "}
-
-                            {ocorrenciasFiltradas.length === 1
-                                ? "ocorrência encontrada"
-                                : "ocorrências encontradas"
-                            }
-
+                            Carregando ocorrências...
                         </span>
 
                     </div>
 
-                )}
+                ) : ocorrenciasFiltradas.length === 0 ? (
 
+                    <div className="estado-tabela">
 
-                {/* =================================================
-                    TABELA
-                ================================================= */}
+                        <ClipboardList size={28} />
 
-                <div className="tabela-container">
+                        <strong>
+                            Nenhuma ocorrência encontrada.
+                        </strong>
 
-                    <table className="tabela">
+                        <span>
+                            Tente alterar os filtros ou registre uma nova ocorrência.
+                        </span>
 
+                    </div>
+
+                ) : (
+
+                    <table>
 
                         <thead>
 
                             <tr>
+
+                                <th>
+                                    Data
+                                </th>
 
                                 <th>
                                     Professor
@@ -1077,10 +903,6 @@ function Ocorrencias() {
                                 </th>
 
                                 <th>
-                                    Data
-                                </th>
-
-                                <th>
                                     Status
                                 </th>
 
@@ -1095,364 +917,184 @@ function Ocorrencias() {
 
                         <tbody>
 
+                            {ocorrenciasFiltradas.map(
+                                (ocorrencia) => {
 
-                            {carregando ? (
+                                  const nomeProfessor =
+    typeof ocorrencia.professor === "string"
+        ? ocorrencia.professor
+        : ocorrencia.professor?.nome ||
+          ocorrencia.professor_nome ||
+          "Não informado"
 
-                                <tr>
-
-                                    <td
-                                        colSpan="7"
-                                        className="tabela-vazia"
-                                    >
-
-                                        <div className="estado-carregando">
-
-                                            <RefreshCw
-                                                size={20}
-                                                className="icone-carregando"
-                                            />
-
-                                            <span>
-                                                Carregando ocorrências...
-                                            </span>
-
-                                        </div>
-
-                                    </td>
-
-                                </tr>
-
-
-                            ) : ocorrenciasFiltradas.length === 0 ? (
-
-                                <tr>
-
-                                    <td
-                                        colSpan="7"
-                                        className="tabela-vazia"
-                                    >
-
-                                        <div className="estado-vazio">
-
-                                            <div className="estado-vazio-icone">
-
-                                                <ClipboardList
-                                                    size={24}
-                                                />
-
-                                            </div>
-
-
-                                            <strong>
-                                                Nenhuma ocorrência encontrada
-                                            </strong>
-
-
-                                            <span>
-
-                                                {busca ||
-                                                filtroStatus !== "todos"
-
-                                                    ? "Tente alterar os filtros de busca."
-
-                                                    : "As ocorrências registradas aparecerão aqui."
-                                                }
-
-                                            </span>
-
-                                        </div>
-
-                                    </td>
-
-                                </tr>
-
-
-                            ) : (
-
-                                ocorrenciasFiltradas.map(
-                                    (ocorrencia) => (
+                                    return (
 
                                         <tr
                                             key={ocorrencia.id}
                                         >
 
-
-                                            {/* PROFESSOR */}
-
                                             <td>
-
-                                                <div className="professor-celula">
-
-                                                    <strong>
-
-                                                        {
-                                                            ocorrencia.professor ||
-                                                            ocorrencia.professor_nome ||
-                                                            "-"
-                                                        }
-
-                                                    </strong>
-
-                                                </div>
-
-                                            </td>
-
-
-                                            {/* SALA */}
-
-                                            <td>
-
-                                                <span className="texto-sala">
-
-                                                    {
-                                                        ocorrencia.sala ||
-                                                        "-"
-                                                    }
-
-                                                </span>
-
-                                            </td>
-
-
-                                            {/* TIPO */}
-
-                                            <td>
-
-                                                <span className="tipo-ocorrencia">
-
-                                                    {
-                                                        ocorrencia.tipo ||
-                                                        "-"
-                                                    }
-
-                                                </span>
-
-                                            </td>
-
-
-                                            {/* DESCRIÇÃO */}
-
-                                            <td>
-
-                                                <div
-                                                    className="ocorrencia-descricao"
-                                                    title={
-                                                        ocorrencia.descricao
-                                                    }
-                                                >
-
-                                                    {
-                                                        ocorrencia.descricao ||
-                                                        "-"
-                                                    }
-
-                                                </div>
-
-                                            </td>
-
-
-                                            {/* DATA */}
-
-                                            <td>
-
-                                                <span className="data-ocorrencia">
-
-                                                    {ocorrencia.data_abertura
-
-                                                        ? new Date(
-                                                            ocorrencia.data_abertura
-                                                        ).toLocaleString(
-                                                            "pt-BR",
-                                                            {
-                                                                day: "2-digit",
-                                                                month: "2-digit",
-                                                                year: "numeric",
-                                                                hour: "2-digit",
-                                                                minute: "2-digit"
-                                                            }
-                                                        )
-
-                                                        : "-"
-                                                    }
-
-                                                </span>
-
-                                            </td>
-
-
-                                            {/* STATUS */}
-
-                                            <td>
-
-                                                {mostrarStatus(
-                                                    ocorrencia.status
+                                                {formatarData(
+                                                    ocorrencia.data_abertura
                                                 )}
+                                            </td>
+
+
+                                            <td>
+                                                {nomeProfessor}
+                                            </td>
+
+
+                                            <td>
+                                                {ocorrencia.sala}
+                                            </td>
+
+
+                                            <td>
+                                                {ocorrencia.tipo}
+                                            </td>
+
+
+                                            <td
+                                                className="descricao-celula"
+                                                title={ocorrencia.descricao}
+                                            >
+                                                {ocorrencia.descricao}
+                                            </td>
+
+
+                                            <td>
+
+                                                <span
+                                                    className={`status ${classeStatus(
+                                                        ocorrencia.status
+                                                    )}`}
+                                                >
+                                                    {textoStatus(
+                                                        ocorrencia.status
+                                                    )}
+                                                </span>
 
                                             </td>
 
 
-                                            {/* AÇÕES */}
-
                                             <td>
 
-                                                <div className="acoes-ocorrencia">
-
+                                                <div className="acoes-tabela">
 
                                                     <button
-                                                        type="button"
-                                                        className="botao-acao botao-status"
+                                                        className="botao-acao"
+                                                        title="Alterar status"
                                                         onClick={() =>
                                                             abrirModalStatus(
                                                                 ocorrencia
                                                             )
                                                         }
-                                                        title="Alterar status"
                                                     >
-
-                                                        <Pencil size={15} />
-
-                                                        <span>
-                                                            Status
-                                                        </span>
-
+                                                        <Pencil size={17} />
                                                     </button>
 
 
                                                     <button
-                                                        type="button"
                                                         className="botao-acao botao-excluir"
-                                                        disabled={
-                                                            excluindoId ===
-                                                            ocorrencia.id
-                                                        }
+                                                        title="Excluir ocorrência"
                                                         onClick={() =>
                                                             excluirOcorrencia(
                                                                 ocorrencia.id
                                                             )
                                                         }
-                                                        title="Excluir ocorrência"
+                                                        disabled={
+                                                            excluindoId ===
+                                                            ocorrencia.id
+                                                        }
                                                     >
 
                                                         {excluindoId ===
                                                         ocorrencia.id ? (
 
                                                             <RefreshCw
-                                                                size={15}
+                                                                size={17}
                                                                 className="icone-carregando"
                                                             />
 
                                                         ) : (
 
                                                             <Trash2
-                                                                size={15}
+                                                                size={17}
                                                             />
 
                                                         )}
 
-                                                        <span>
-                                                            Excluir
-                                                        </span>
-
                                                     </button>
-
 
                                                 </div>
 
                                             </td>
 
-
                                         </tr>
 
                                     )
-                                )
-
+                                }
                             )}
 
                         </tbody>
 
                     </table>
 
-                </div>
+                )}
 
-            </section>
+            </div>
 
 
-            {/* =================================================
-                MODAL NOVA OCORRÊNCIA
-            ================================================= */}
+            {/* =====================================================
+                MODAL - NOVA OCORRÊNCIA
+            ====================================================== */}
 
             {modalAberto && (
 
-                <div
-                    className="modal-fundo"
-                    onMouseDown={(event) => {
+                <div className="modal-overlay">
 
-                        if (
-                            event.target ===
-                            event.currentTarget
-                        ) {
-
-                            fecharModal()
-
-                        }
-
-                    }}
-                >
-
-
-                    <div
-                        className="modal"
-                        onMouseDown={(event) =>
-                            event.stopPropagation()
-                        }
-                    >
-
+                    <div className="modal">
 
                         <div className="modal-cabecalho">
 
                             <div>
 
-                                <span className="modal-overline">
-                                    NOVO ATENDIMENTO
-                                </span>
-
                                 <h2>
-                                    Registrar ocorrência
+                                    Nova ocorrência
                                 </h2>
 
                                 <p>
-                                    Informe os dados do problema
-                                    encontrado.
+                                    Registre um problema atendido pelo PROATI.
                                 </p>
 
                             </div>
 
 
                             <button
-                                type="button"
                                 className="modal-fechar"
                                 onClick={fecharModal}
-                                title="Fechar"
+                                disabled={salvando}
                             >
-
-                                <X size={19} />
-
+                                <X size={20} />
                             </button>
 
                         </div>
 
 
                         <form
-                            className="formulario"
                             onSubmit={registrarOcorrencia}
                         >
 
+                            {/* =================================================
+                                ERRO DO FORMULÁRIO
+                            ================================================== */}
 
                             {erroFormulario && (
 
-                                <div className="modal-erro">
+                                <div className="formulario-erro">
 
-                                    <AlertTriangle size={16} />
+                                    <AlertTriangle size={17} />
 
                                     <span>
                                         {erroFormulario}
@@ -1463,7 +1105,9 @@ function Ocorrencias() {
                             )}
 
 
-                            {/* PROFESSOR */}
+                            {/* =================================================
+                                PROFESSOR
+                            ================================================== */}
 
                             <div className="campo">
 
@@ -1471,13 +1115,8 @@ function Ocorrencias() {
                                     className="campo-label"
                                     htmlFor="professor"
                                 >
-
                                     Professor
-
-                                    <span>
-                                        *
-                                    </span>
-
+                                    <span>*</span>
                                 </label>
 
 
@@ -1493,7 +1132,7 @@ function Ocorrencias() {
                                 >
 
                                     <option value="">
-                                        Selecione o professor
+                                        Selecione um professor
                                     </option>
 
 
@@ -1504,9 +1143,7 @@ function Ocorrencias() {
                                                 key={professor.id}
                                                 value={professor.id}
                                             >
-
                                                 {professor.nome}
-
                                             </option>
 
                                         )
@@ -1517,7 +1154,9 @@ function Ocorrencias() {
                             </div>
 
 
-                            {/* SALA */}
+                            {/* =================================================
+                                SALA
+                            ================================================== */}
 
                             <div className="campo">
 
@@ -1525,13 +1164,8 @@ function Ocorrencias() {
                                     className="campo-label"
                                     htmlFor="sala"
                                 >
-
                                     Sala
-
-                                    <span>
-                                        *
-                                    </span>
-
+                                    <span>*</span>
                                 </label>
 
 
@@ -1539,10 +1173,38 @@ function Ocorrencias() {
                                     id="sala"
                                     className="campo-input"
                                     type="text"
-                                    placeholder="Ex.: Laboratório 01"
+                                    placeholder="Ex.: Sala de Informática"
                                     value={sala}
                                     onChange={(event) =>
-                                        setSala(
+                                        setSala(event.target.value)
+                                    }
+                                />
+
+                            </div>
+
+
+                            {/* =================================================
+                                DATA DA OCORRÊNCIA
+                            ================================================== */}
+
+                            <div className="campo">
+
+                                <label
+                                    className="campo-label"
+                                    htmlFor="data-abertura"
+                                >
+                                    Data da ocorrência
+                                    <span>*</span>
+                                </label>
+
+
+                                <input
+                                    id="data-abertura"
+                                    className="campo-input"
+                                    type="date"
+                                    value={dataAbertura}
+                                    onChange={(event) =>
+                                        setDataAbertura(
                                             event.target.value
                                         )
                                     }
@@ -1551,7 +1213,9 @@ function Ocorrencias() {
                             </div>
 
 
-                            {/* TIPO */}
+                            {/* =================================================
+                                TIPO DO PROBLEMA
+                            ================================================== */}
 
                             <div className="campo">
 
@@ -1559,13 +1223,8 @@ function Ocorrencias() {
                                     className="campo-label"
                                     htmlFor="tipo"
                                 >
-
                                     Tipo do problema
-
-                                    <span>
-                                        *
-                                    </span>
-
+                                    <span>*</span>
                                 </label>
 
 
@@ -1574,9 +1233,7 @@ function Ocorrencias() {
                                     className="campo-input"
                                     value={tipo}
                                     onChange={(event) =>
-                                        setTipo(
-                                            event.target.value
-                                        )
+                                        setTipo(event.target.value)
                                     }
                                 >
 
@@ -1584,36 +1241,48 @@ function Ocorrencias() {
                                         Selecione o tipo
                                     </option>
 
-                                    <option value="Chromebook">
-                                        Chromebook
-                                    </option>
-
-                                    <option value="Rede">
+                                    <option value="REDE">
                                         Rede
                                     </option>
 
-                                    <option value="Internet">
-                                        Internet
+                                    <option value="COMPUTADOR">
+                                        Computador
                                     </option>
 
-                                    <option value="Sistema">
-                                        Sistema
+                                    <option value="PROJETOR">
+                                        Projetor
                                     </option>
 
-                                    <option value="Hardware">
-                                        Hardware
+                                    <option value="IMPRESSORA">
+                                        Impressora
                                     </option>
+                                            <option value="MONITOR">
+                                        Monitor
+                                    </option>
+                                            <option value="MOUSE/TECLADO">
+                                            Mouse/Teclado
+                                    </option>
+                                     <option value="CAIXA DE SOM">
+                                            Caixa de Som
+                                    </option>
+                                    
+                                    
 
-                                    <option value="Outro">
+
+                                    <option value="OUTRO">
                                         Outro
                                     </option>
+
+                                  
 
                                 </select>
 
                             </div>
 
 
-                            {/* DESCRIÇÃO */}
+                            {/* =================================================
+                                DESCRIÇÃO
+                            ================================================== */}
 
                             <div className="campo">
 
@@ -1621,13 +1290,8 @@ function Ocorrencias() {
                                     className="campo-label"
                                     htmlFor="descricao"
                                 >
-
                                     Descrição
-
-                                    <span>
-                                        *
-                                    </span>
-
+                                    <span>*</span>
                                 </label>
 
 
@@ -1641,24 +1305,17 @@ function Ocorrencias() {
                                             event.target.value
                                         )
                                     }
-                                    rows="4"
+                                    rows={4}
                                 />
-
-
-                                <span className="campo-ajuda">
-
-                                    Descreva o problema de forma
-                                    objetiva para facilitar o atendimento.
-
-                                </span>
 
                             </div>
 
 
-                            {/* AÇÕES */}
+                            {/* =================================================
+                                BOTÕES
+                            ================================================== */}
 
                             <div className="modal-acoes">
-
 
                                 <button
                                     type="button"
@@ -1666,39 +1323,35 @@ function Ocorrencias() {
                                     onClick={fecharModal}
                                     disabled={salvando}
                                 >
+                                    <X size={18} />
 
                                     Cancelar
-
                                 </button>
 
 
                                 <button
                                     type="submit"
-                                    className="botao botao-principal"
+                                    className="botao-principal"
                                     disabled={salvando}
                                 >
 
                                     {salvando ? (
 
                                         <>
-
                                             <RefreshCw
-                                                size={16}
+                                                size={18}
                                                 className="icone-carregando"
                                             />
 
                                             Salvando...
-
                                         </>
 
                                     ) : (
 
                                         <>
-
-                                            <Check size={16} />
+                                            <Save size={18} />
 
                                             Registrar ocorrência
-
                                         </>
 
                                     )}
@@ -1716,183 +1369,136 @@ function Ocorrencias() {
             )}
 
 
-            {/* =================================================
-                MODAL ALTERAR STATUS
-            ================================================= */}
+            {/* =====================================================
+                MODAL - ALTERAR STATUS
+            ====================================================== */}
 
-            {modalStatusAberto && (
+            {modalStatusAberto && ocorrenciaSelecionada && (
 
-                <div
-                    className="modal-fundo"
-                    onMouseDown={(event) => {
+                <div className="modal-overlay">
 
-                        if (
-                            event.target ===
-                            event.currentTarget
-                        ) {
-
-                            fecharModalStatus()
-
-                        }
-
-                    }}
-                >
-
-
-                    <div
-                        className="modal modal-status"
-                        onMouseDown={(event) =>
-                            event.stopPropagation()
-                        }
-                    >
-
+                    <div className="modal modal-status">
 
                         <div className="modal-cabecalho">
 
                             <div>
-
-                                <span className="modal-overline">
-                                    GERENCIAR OCORRÊNCIA
-                                </span>
 
                                 <h2>
                                     Alterar status
                                 </h2>
 
                                 <p>
-                                    Escolha o novo status para esta ocorrência.
+                                    Atualize o andamento da ocorrência.
                                 </p>
 
                             </div>
 
 
                             <button
-                                type="button"
                                 className="modal-fechar"
                                 onClick={fecharModalStatus}
-                                title="Fechar"
+                                disabled={salvandoStatus}
                             >
-
-                                <X size={19} />
-
+                                <X size={20} />
                             </button>
 
                         </div>
 
 
-                        <div className="formulario">
+                        <div className="status-info">
+
+                            <strong>
+                                Ocorrência #{ocorrenciaSelecionada.id}
+                            </strong>
+
+                            <span>
+                                {ocorrenciaSelecionada.descricao}
+                            </span>
+
+                        </div>
 
 
-                            {ocorrenciaSelecionada && (
+                        <div className="campo">
 
-                                <div className="resumo-status">
-
-                                    <span>
-                                        Ocorrência #{ocorrenciaSelecionada.id}
-                                    </span>
-
-                                    <strong>
-                                        {
-                                            ocorrenciaSelecionada.descricao ||
-                                            "Sem descrição"
-                                        }
-                                    </strong>
-
-                                </div>
-
-                            )}
+                            <label
+                                className="campo-label"
+                                htmlFor="novo-status"
+                            >
+                                Status
+                            </label>
 
 
-                            <div className="campo">
+                            <select
+                                id="novo-status"
+                                className="campo-input"
+                                value={novoStatus}
+                                onChange={(event) =>
+                                    setNovoStatus(
+                                        event.target.value
+                                    )
+                                }
+                            >
 
-                                <label
-                                    className="campo-label"
-                                    htmlFor="novo-status"
-                                >
+                                <option value="ABERTA">
+                                    Aberta
+                                </option>
 
-                                    Novo status
+                                <option value="EM_ANDAMENTO">
+                                    Em andamento
+                                </option>
 
-                                </label>
+                                <option value="RESOLVIDA">
+                                    Resolvida
+                                </option>
 
+                            </select>
 
-                                <select
-                                    id="novo-status"
-                                    className="campo-input"
-                                    value={novoStatus}
-                                    onChange={(event) =>
-                                        setNovoStatus(
-                                            event.target.value
-                                        )
-                                    }
-                                >
-
-                                    <option value="ABERTA">
-                                        Aberta
-                                    </option>
-
-                                    <option value="EM_ANDAMENTO">
-                                        Em andamento
-                                    </option>
-
-                                    <option value="RESOLVIDA">
-                                        Resolvida
-                                    </option>
-
-                                </select>
-
-                            </div>
+                        </div>
 
 
-                            <div className="modal-acoes">
+                        <div className="modal-acoes">
+
+                            <button
+                                type="button"
+                                className="botao-secundario"
+                                onClick={fecharModalStatus}
+                                disabled={salvandoStatus}
+                            >
+                                <X size={18} />
+
+                                Cancelar
+                            </button>
 
 
-                                <button
-                                    type="button"
-                                    className="botao-secundario"
-                                    onClick={fecharModalStatus}
-                                    disabled={salvandoStatus}
-                                >
+                            <button
+                                type="button"
+                                className="botao-principal"
+                                onClick={alterarStatus}
+                                disabled={salvandoStatus}
+                            >
 
-                                    Cancelar
+                                {salvandoStatus ? (
 
-                                </button>
+                                    <>
+                                        <RefreshCw
+                                            size={18}
+                                            className="icone-carregando"
+                                        />
 
+                                        Salvando...
+                                    </>
 
-                                <button
-                                    type="button"
-                                    className="botao botao-principal"
-                                    onClick={alterarStatus}
-                                    disabled={salvandoStatus}
-                                >
+                                ) : (
 
-                                    {salvandoStatus ? (
+                                    <>
+                                        <Check size={18} />
 
-                                        <>
+                                        Salvar status
+                                    </>
 
-                                            <RefreshCw
-                                                size={16}
-                                                className="icone-carregando"
-                                            />
+                                )}
 
-                                            Salvando...
-
-                                        </>
-
-                                    ) : (
-
-                                        <>
-
-                                            <Save size={16} />
-
-                                            Salvar status
-
-                                        </>
-
-                                    )}
-
-                                </button>
-
-                            </div>
+                            </button>
 
                         </div>
 
@@ -1903,6 +1509,7 @@ function Ocorrencias() {
             )}
 
         </div>
+
     )
 }
 

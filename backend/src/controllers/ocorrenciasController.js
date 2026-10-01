@@ -17,7 +17,8 @@ const criarOcorrencia = async (req, res) => {
             sala,
             tipo,
             descricao,
-            responsavel
+            responsavel,
+            data_abertura
         } = req.body;
 
 
@@ -58,6 +59,26 @@ const criarOcorrencia = async (req, res) => {
 
 
         // ==========================
+        // VALIDAR DATA
+        // ==========================
+
+        if (data_abertura) {
+
+            const dataInformada = new Date(data_abertura);
+
+            if (isNaN(dataInformada.getTime())) {
+
+                return res.status(400).json({
+                    sucesso: false,
+                    mensagem: 'Data da ocorrência inválida.'
+                });
+
+            }
+
+        }
+
+
+        // ==========================
         // CRIAR OCORRÊNCIA
         // ==========================
 
@@ -70,10 +91,11 @@ const criarOcorrencia = async (req, res) => {
                 sala,
                 tipo,
                 descricao,
+                data_abertura,
                 responsavel
             )
 
-            VALUES ($1, $2, $3, $4, $5)
+            VALUES ($1, $2, $3, $4, COALESCE($5, CURRENT_TIMESTAMP), $6)
 
             RETURNING *
             `,
@@ -83,6 +105,7 @@ const criarOcorrencia = async (req, res) => {
                 sala.trim(),
                 tipo.trim().toUpperCase(),
                 descricao.trim(),
+                data_abertura || null,
                 responsavel || null
             ]
 
@@ -91,6 +114,10 @@ const criarOcorrencia = async (req, res) => {
 
         console.log('✅ OCORRÊNCIA CRIADA');
         console.log('ID:', resultado.rows[0].id);
+        console.log(
+            'Data:',
+            resultado.rows[0].data_abertura
+        );
 
 
         res.status(201).json({
@@ -136,7 +163,9 @@ const listarOcorrencias = async (req, res) => {
 
                 ocorrencias.id,
 
-                professores.nome AS professor,
+                ocorrencias.professor_id,
+
+                professores.nome AS professor_nome,
 
                 ocorrencias.sala,
 
@@ -155,7 +184,7 @@ const listarOcorrencias = async (req, res) => {
             FROM ocorrencias
 
             LEFT JOIN professores
-                ON ocorrencias.professor_id = professores.id
+                ON professores.id = ocorrencias.professor_id
 
             ORDER BY ocorrencias.data_abertura DESC
             `
@@ -165,6 +194,15 @@ const listarOcorrencias = async (req, res) => {
 
         console.log(
             `✅ ${resultado.rows.length} ocorrências encontradas`
+        );
+
+        console.log(
+            '👨‍🏫 Professores das ocorrências:',
+            resultado.rows.map((ocorrencia) => ({
+                id: ocorrencia.id,
+                professor_id: ocorrencia.professor_id,
+                professor_nome: ocorrencia.professor_nome
+            }))
         );
 
 
@@ -182,16 +220,19 @@ const listarOcorrencias = async (req, res) => {
 
         console.error('❌ ERRO AO LISTAR OCORRÊNCIAS');
         console.error('Mensagem:', erro.message);
+        console.error('Código:', erro.code);
 
         res.status(500).json({
+
             sucesso: false,
+
             mensagem: 'Erro ao buscar ocorrências.'
+
         });
 
     }
 
 };
-
 
 // ==========================================
 // BUSCAR OCORRÊNCIA POR ID
@@ -283,7 +324,8 @@ const atualizarOcorrencia = async (req, res) => {
         tipo,
         descricao,
         responsavel,
-        status
+        status,
+        data_abertura
     } = req.body;
 
 
@@ -297,6 +339,26 @@ const atualizarOcorrencia = async (req, res) => {
                 sucesso: false,
                 mensagem: 'ID inválido.'
             });
+
+        }
+
+
+        // ==========================
+        // VALIDAR DATA
+        // ==========================
+
+        if (data_abertura) {
+
+            const dataInformada = new Date(data_abertura);
+
+            if (isNaN(dataInformada.getTime())) {
+
+                return res.status(400).json({
+                    sucesso: false,
+                    mensagem: 'Data da ocorrência inválida.'
+                });
+
+            }
 
         }
 
@@ -316,9 +378,11 @@ const atualizarOcorrencia = async (req, res) => {
 
                 responsavel = COALESCE($4, responsavel),
 
-                status = COALESCE($5, status)
+                status = COALESCE($5, status),
 
-            WHERE id = $6
+                data_abertura = COALESCE($6, data_abertura)
+
+            WHERE id = $7
 
             RETURNING *
             `,
@@ -329,6 +393,7 @@ const atualizarOcorrencia = async (req, res) => {
                 descricao,
                 responsavel,
                 status,
+                data_abertura || null,
                 id
             ]
 
@@ -396,6 +461,7 @@ const resolverOcorrencia = async (req, res) => {
 
 
         // Verifica se existe
+
         const ocorrencia = await pool.query(
 
             'SELECT * FROM ocorrencias WHERE id = $1',
@@ -416,6 +482,7 @@ const resolverOcorrencia = async (req, res) => {
 
 
         // Verifica se já foi resolvida
+
         if (ocorrencia.rows[0].status === 'RESOLVIDA') {
 
             return res.status(400).json({
@@ -427,6 +494,7 @@ const resolverOcorrencia = async (req, res) => {
 
 
         // Atualiza
+
         const resultado = await pool.query(
 
             `
@@ -474,15 +542,17 @@ const resolverOcorrencia = async (req, res) => {
     }
 
 };
+
+
 // =========================================================
 // EXCLUIR OCORRÊNCIA
 // =========================================================
 
 const excluirOcorrencia = async (req, res) => {
 
-    const { id } = req.params
+    const { id } = req.params;
 
-    console.log(`🗑️ Excluindo ocorrência ID: ${id}`)
+    console.log(`🗑️ Excluindo ocorrência ID: ${id}`);
 
     try {
 
@@ -491,19 +561,24 @@ const excluirOcorrencia = async (req, res) => {
             return res.status(400).json({
                 sucesso: false,
                 mensagem: 'ID inválido.'
-            })
+            });
 
         }
 
 
         const resultado = await pool.query(
+
             `
             DELETE FROM ocorrencias
+
             WHERE id = $1
+
             RETURNING *
             `,
+
             [id]
-        )
+
+        );
 
 
         if (resultado.rows.length === 0) {
@@ -511,7 +586,7 @@ const excluirOcorrencia = async (req, res) => {
             return res.status(404).json({
                 sucesso: false,
                 mensagem: 'Ocorrência não encontrada.'
-            })
+            });
 
         }
 
@@ -519,7 +594,7 @@ const excluirOcorrencia = async (req, res) => {
         console.log(
             '✅ OCORRÊNCIA EXCLUÍDA:',
             resultado.rows[0].id
-        )
+        );
 
 
         res.status(200).json({
@@ -530,16 +605,16 @@ const excluirOcorrencia = async (req, res) => {
 
             ocorrencia: resultado.rows[0]
 
-        })
+        });
 
 
     } catch (erro) {
 
         console.error(
             '❌ ERRO AO EXCLUIR OCORRÊNCIA'
-        )
+        );
 
-        console.error(erro.message)
+        console.error(erro.message);
 
 
         res.status(500).json({
@@ -548,11 +623,16 @@ const excluirOcorrencia = async (req, res) => {
 
             mensagem: 'Erro ao excluir ocorrência.'
 
-        })
+        });
 
     }
-}
 
+};
+
+
+// =========================================================
+// EXPORTAÇÃO
+// =========================================================
 
 module.exports = {
 
@@ -565,7 +645,7 @@ module.exports = {
     atualizarOcorrencia,
 
     resolverOcorrencia,
-    
+
     excluirOcorrencia
 
 };

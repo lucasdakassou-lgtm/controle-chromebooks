@@ -20,9 +20,8 @@ function Professores() {
     // Controle do modal
     const [modalAberto, setModalAberto] = useState(false)
 
-    // Campos do formulário
+    // Campo do formulário
     const [nome, setNome] = useState("")
-    const [email, setEmail] = useState("")
 
     // Quando estiver editando, guardamos o ID
     const [professorEditando, setProfessorEditando] = useState(null)
@@ -114,7 +113,6 @@ function Professores() {
 
         setProfessorEditando(null)
         setNome("")
-        setEmail("")
         setErroFormulario("")
         setModalAberto(true)
     }
@@ -131,7 +129,6 @@ function Professores() {
 
         setProfessorEditando(professor.id)
         setNome(professor.nome || "")
-        setEmail(professor.email || "")
         setErroFormulario("")
         setModalAberto(true)
     }
@@ -147,7 +144,6 @@ function Professores() {
 
         setModalAberto(false)
         setNome("")
-        setEmail("")
         setProfessorEditando(null)
         setErroFormulario("")
     }
@@ -162,7 +158,6 @@ function Professores() {
         console.log("================================")
         console.log("[Professores] Salvando professor...")
         console.log("[Professores] Nome:", nome)
-        console.log("[Professores] E-mail:", email)
         console.log("================================")
 
         setErroFormulario("")
@@ -171,13 +166,6 @@ function Professores() {
         if (!nome.trim()) {
             setErroFormulario(
                 "Informe o nome do professor."
-            )
-            return
-        }
-
-        if (!email.trim()) {
-            setErroFormulario(
-                "Informe o e-mail do professor."
             )
             return
         }
@@ -197,8 +185,7 @@ function Professores() {
                 resposta = await api.put(
                     `/professores/${professorEditando}`,
                     {
-                        nome: nome.trim(),
-                        email: email.trim()
+                        nome: nome.trim()
                     }
                 )
             } else {
@@ -210,8 +197,7 @@ function Professores() {
                 resposta = await api.post(
                     "/professores",
                     {
-                        nome: nome.trim(),
-                        email: email.trim()
+                        nome: nome.trim()
                     }
                 )
             }
@@ -328,14 +314,9 @@ function Professores() {
         (professor) => {
             const texto = busca.toLowerCase()
 
-            return (
-                professor.nome
-                    ?.toLowerCase()
-                    .includes(texto) ||
-                professor.email
-                    ?.toLowerCase()
-                    .includes(texto)
-            )
+            return professor.nome
+                ?.toLowerCase()
+                .includes(texto)
         }
     )
 
@@ -456,7 +437,6 @@ function Professores() {
                         <thead>
                             <tr>
                                 <th>Nome</th>
-                                <th>E-mail</th>
                                 <th>Ações</th>
                             </tr>
                         </thead>
@@ -466,7 +446,7 @@ function Professores() {
                             {professoresFiltrados.length === 0 ? (
                                 <tr>
                                     <td
-                                        colSpan="3"
+                                        colSpan="2"
                                         className="tabela-vazia"
                                     >
                                         Nenhum professor encontrado.
@@ -485,12 +465,6 @@ function Professores() {
                                                         professor.nome
                                                     }
                                                 </strong>
-                                            </td>
-
-                                            <td>
-                                                {
-                                                    professor.email
-                                                }
                                             </td>
 
                                             <td>
@@ -600,27 +574,6 @@ function Professores() {
                                     value={nome}
                                     onChange={(evento) =>
                                         setNome(
-                                            evento.target.value
-                                        )
-                                    }
-                                />
-
-                            </div>
-
-                            {/* E-mail */}
-                            <div className="campo">
-
-                                <label className="campo-label">
-                                    E-mail
-                                </label>
-
-                                <input
-                                    className="campo-input"
-                                    type="email"
-                                    placeholder="professor@escola.com"
-                                    value={email}
-                                    onChange={(evento) =>
-                                        setEmail(
                                             evento.target.value
                                         )
                                     }

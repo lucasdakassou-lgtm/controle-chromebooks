@@ -1,82 +1,375 @@
+/* =========================================================
+   PÁGINA DE EMPRÉSTIMOS
+========================================================= */
+
 .emprestimos {
-    max-width: 1600px;
-    margin: 0 auto;
+    width: 100%;
+    min-height: 100vh;
+    color: var(--preto);
 }
 
+
+/* =========================================================
+   CABEÇALHO
+========================================================= */
+
+.emprestimos-cabecalho {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+}
+
+.emprestimos-cabecalho h1 {
+    margin: 0 0 8px;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.emprestimos-cabecalho p {
+    margin: 0;
+    color: var(--cinza);
+    font-size: 15px;
+}
+
+.emprestimos-acoes {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+
+/* =========================================================
+   BOTÕES DO CABEÇALHO
+========================================================= */
+
+.botao-atualizar,
+.botao-novo-emprestimo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    height: 40px;
+    padding: 0 15px;
+
+    border-radius: 8px;
+    border: 1px solid var(--borda);
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.botao-atualizar {
+    background: var(--branco);
+    color: var(--preto);
+}
+
+.botao-atualizar:hover {
+    border-color: var(--roxo);
+    background: var(--fundo);
+}
+
+.botao-novo-emprestimo {
+    border-color: var(--roxo);
+    background: var(--roxo);
+    color: #ffffff;
+}
+
+.botao-novo-emprestimo:hover {
+    background: #7c3aed;
+    transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   MENSAGENS
+========================================================= */
+
+.mensagem-sucesso,
+.mensagem-erro {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    padding: 13px 16px;
+    margin-bottom: 20px;
+
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.mensagem-sucesso {
+    background: rgba(34, 197, 94, 0.10);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    color: #22c55e;
+}
+
+.mensagem-erro {
+    background: rgba(239, 68, 68, 0.10);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #ef4444;
+}
+
+.mensagem-erro button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-left: auto;
+
+    border: 0;
+    background: transparent;
+    color: inherit;
+}
+
+
+/* =========================================================
+   CARDS
+========================================================= */
+
 .emprestimos .cards {
-    grid-template-columns: repeat(3, 1fr);
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+
+    margin-bottom: 20px;
 }
 
 .emprestimos .card {
     position: relative;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
+
+    min-height: 145px;
+    padding: 22px;
+
+    background: var(--branco);
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+
+    transition:
+        transform 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.emprestimos .card-icone {
-    margin-bottom: 18px;
+.emprestimos .card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(139, 92, 246, 0.35);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
-.emprestimos .painel {
-    margin-top: 24px;
+.card-icone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 42px;
+    height: 42px;
+
+    margin-bottom: 8px;
+
+    border-radius: 10px;
+
+    background: rgba(139, 92, 246, 0.12);
+    color: var(--roxo);
 }
 
-.campo-busca {
-    width: 280px;
-    height: 40px;
+.emprestimos .card:nth-child(2) .card-icone {
+    background: rgba(37, 99, 235, 0.12);
+    color: var(--azul);
+}
+
+.emprestimos .card:nth-child(3) .card-icone {
+    background: rgba(249, 115, 22, 0.12);
+    color: var(--laranja);
+}
+
+.emprestimos .card span {
+    color: var(--cinza);
+    font-size: 14px;
+}
+
+.emprestimos .card strong {
+    color: var(--preto);
+    font-size: 26px;
+    line-height: 1;
+}
+
+.emprestimos .card small {
+    color: var(--cinza);
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   RESUMO
+========================================================= */
+
+.emprestimos-resumo {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 28px;
+
+    margin: 4px 0 28px;
+
+    color: var(--cinza);
+    font-size: 14px;
+}
+
+.emprestimos-resumo span {
+    display: inline-flex;
+    gap: 5px;
+}
+
+.emprestimos-resumo strong {
+    color: var(--preto);
+}
+
+
+/* =========================================================
+   LISTA DE EMPRÉSTIMOS
+========================================================= */
+
+.emprestimos-lista {
+    width: 100%;
+
+    background: var(--branco);
+    border: 1px solid var(--borda);
+    border-radius: 12px;
+
+    overflow: hidden;
+}
+
+
+/* =========================================================
+   CABEÇALHO DA LISTA
+========================================================= */
+
+.lista-cabecalho {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+
+    padding: 22px 24px;
+
+    border-bottom: 1px solid var(--borda);
+}
+
+.lista-cabecalho h2 {
+    margin: 0 0 5px;
+
+    font-size: 19px;
+    font-weight: 700;
+}
+
+.lista-cabecalho p {
+    margin: 0;
+
+    color: var(--cinza);
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   BUSCA
+========================================================= */
+
+.emprestimos-busca {
+    position: relative;
 
     display: flex;
     align-items: center;
-    gap: 9px;
 
-    padding: 0 12px;
+    width: 300px;
+}
+
+.emprestimos-busca svg {
+    position: absolute;
+    left: 12px;
+
+    color: var(--cinza);
+
+    pointer-events: none;
+}
+
+.emprestimos-busca input {
+    width: 100%;
+    height: 40px;
+
+    padding: 0 12px 0 38px;
 
     border: 1px solid var(--borda);
     border-radius: 8px;
 
-    background: var(--fundo);
-    color: var(--cinza);
-}
-
-.campo-busca input {
-    width: 100%;
-
-    border: none;
     outline: none;
 
-    background: transparent;
+    background: var(--fundo);
     color: var(--preto);
 
     font-size: 13px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.campo-busca input::placeholder {
+.emprestimos-busca input::placeholder {
     color: var(--cinza);
 }
+
+.emprestimos-busca input:focus {
+    border-color: var(--roxo);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.10);
+}
+
+
+/* =========================================================
+   TABELA
+========================================================= */
 
 .tabela-container {
     width: 100%;
     overflow-x: auto;
 }
 
-.tabela {
+.tabela-container table {
     width: 100%;
+    min-width: 900px;
+
     border-collapse: collapse;
 }
 
-.tabela th {
-    padding: 13px 14px;
+.tabela-container th {
+    padding: 13px 20px;
 
+    background: var(--fundo);
     border-bottom: 1px solid var(--borda);
 
     color: var(--cinza);
 
     font-size: 12px;
     font-weight: 600;
-
     text-align: left;
+    white-space: nowrap;
 }
 
-.tabela td {
-    padding: 16px 14px;
+.tabela-container td {
+    padding: 15px 20px;
 
     border-bottom: 1px solid var(--borda);
 
@@ -85,13 +378,51 @@
     font-size: 13px;
 }
 
-.tabela tbody tr:last-child td {
-    border-bottom: none;
+.tabela-container tbody tr {
+    transition: background 0.15s ease;
 }
 
-.tabela tbody tr:hover {
-    background: var(--fundo);
+.tabela-container tbody tr:hover {
+    background: rgba(139, 92, 246, 0.035);
 }
+
+.tabela-container tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+
+/* =========================================================
+   BADGE DO EQUIPAMENTO
+========================================================= */
+
+.equipamento-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 6px 9px;
+
+    border-radius: 7px;
+
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.equipamento-chromebook {
+    background: rgba(139, 92, 246, 0.12);
+    color: var(--roxo);
+}
+
+.equipamento-tablet {
+    background: rgba(37, 99, 235, 0.12);
+    color: var(--azul);
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
 
 .status-ativo {
     display: inline-flex;
@@ -99,80 +430,99 @@
 
     padding: 5px 9px;
 
-    border-radius: 6px;
+    border-radius: 20px;
 
-    background: #dcfce7;
-    color: #15803d;
+    background: rgba(34, 197, 94, 0.10);
+    color: #22c55e;
 
     font-size: 12px;
     font-weight: 600;
 }
 
+
+/* =========================================================
+   BOTÃO DEVOLVER
+========================================================= */
+
 .botao-devolver {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 7px;
 
-    padding: 7px 10px;
+    height: 34px;
+    padding: 0 11px;
 
     border: 1px solid var(--borda);
     border-radius: 7px;
 
-    background: var(--branco);
+    background: transparent;
     color: var(--preto);
 
     font-size: 12px;
+    font-weight: 600;
 
-    transition: 0.2s;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
 }
 
-.botao-devolver:hover {
-    background: var(--fundo);
+.botao-devolver:hover:not(:disabled) {
+    border-color: var(--azul);
+    background: rgba(37, 99, 235, 0.08);
+    color: var(--azul);
 }
 
-.tabela-vazia {
-    padding: 35px !important;
-
-    color: var(--cinza) !important;
-
-    text-align: center !important;
+.botao-devolver:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
-.emprestimos-carregando {
-    padding: 50px;
 
-    color: var(--cinza);
+/* =========================================================
+   LISTA VAZIA
+========================================================= */
+
+.lista-vazia {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 230px;
+    padding: 40px 20px;
 
     text-align: center;
+
+    color: var(--cinza);
 }
 
-.emprestimos-erro {
-    padding: 16px;
-
-    border: 1px solid #fecaca;
-    border-radius: 8px;
-
-    background: #fef2f2;
-    color: #b91c1c;
+.lista-vazia svg {
+    margin-bottom: 12px;
+    color: var(--roxo);
 }
 
-@media (max-width: 900px) {
-    .emprestimos .cards {
-        grid-template-columns: 1fr;
-    }
+.lista-vazia strong {
+    margin-bottom: 5px;
 
-    .painel-cabecalho {
-        flex-direction: column;
-        gap: 16px;
-    }
-
-    .campo-busca {
-        width: 100%;
-    }
+    color: var(--preto);
+    font-size: 15px;
 }
-.modal-fundo {
+
+.lista-vazia span {
+    font-size: 13px;
+}
+
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.modal-overlay {
     position: fixed;
     inset: 0;
+    z-index: 1000;
 
     display: flex;
     align-items: center;
@@ -180,94 +530,107 @@
 
     padding: 20px;
 
-    background: rgba(15, 23, 42, 0.45);
-
-    z-index: 1000;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(4px);
 }
 
-.modal {
-    width: 100%;
-    max-width: 500px;
+.modal-emprestimo {
+    width: min(560px, 100%);
+    max-height: calc(100vh - 40px);
+
+    overflow-y: auto;
 
     background: var(--branco);
     border: 1px solid var(--borda);
     border-radius: 14px;
 
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
-
-    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
 }
+
+
+/* =========================================================
+   CABEÇALHO DO MODAL
+========================================================= */
 
 .modal-cabecalho {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
+    gap: 20px;
 
-    padding: 24px;
+    padding: 22px 24px;
 
     border-bottom: 1px solid var(--borda);
 }
 
 .modal-cabecalho h2 {
-    margin: 0;
+    margin: 0 0 5px;
 
-    color: var(--preto);
-
-    font-size: 19px;
+    font-size: 20px;
 }
 
 .modal-cabecalho p {
-    margin: 6px 0 0;
+    margin: 0;
 
     color: var(--cinza);
-
     font-size: 13px;
 }
 
 .modal-fechar {
-    width: 32px;
-    height: 32px;
-
     display: flex;
     align-items: center;
     justify-content: center;
 
-    border: none;
+    width: 34px;
+    height: 34px;
+
+    border: 0;
     border-radius: 7px;
 
     background: transparent;
     color: var(--cinza);
 
-    font-size: 22px;
-
-    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease;
 }
 
-.modal-fechar:hover {
+.modal-fechar:hover:not(:disabled) {
     background: var(--fundo);
     color: var(--preto);
 }
 
-.formulario {
+
+/* =========================================================
+   FORMULÁRIO
+========================================================= */
+
+.modal-emprestimo form {
     padding: 24px;
 }
 
-.campo {
+.formulario-campo {
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: 8px;
 
     margin-bottom: 18px;
 }
 
-.campo-label {
+.formulario-campo label {
     color: var(--preto);
 
     font-size: 13px;
     font-weight: 600;
 }
 
-.campo-input {
+.formulario-campo label span {
+    margin-left: 3px;
+    color: #ef4444;
+}
+
+.formulario-campo select,
+.formulario-campo input {
     width: 100%;
     height: 42px;
 
@@ -278,65 +641,314 @@
 
     outline: none;
 
-    background: var(--branco);
+    background: var(--fundo);
     color: var(--preto);
 
-    font-size: 13px;
+    font-size: 14px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 }
 
-.campo-input:focus {
+.formulario-campo select:focus,
+.formulario-campo input:focus {
     border-color: var(--roxo);
-
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.12);
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.10);
 }
 
-.modal-disponibilidade {
+.formulario-campo small {
+    color: var(--cinza);
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   SELEÇÃO DE EQUIPAMENTO
+========================================================= */
+
+.tipo-equipamento-opcoes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+
+.tipo-equipamento-opcao {
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 12px;
 
-    margin-bottom: 18px;
-    padding: 12px;
+    min-height: 72px;
+    padding: 12px 14px;
 
     border: 1px solid var(--borda);
-    border-radius: 8px;
+    border-radius: 10px;
 
     background: var(--fundo);
-    color: var(--cinza);
+    color: var(--preto);
 
+    text-align: left;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.tipo-equipamento-opcao:hover {
+    border-color: rgba(139, 92, 246, 0.5);
+}
+
+.tipo-equipamento-opcao.selecionado {
+    border-color: var(--roxo);
+    background: rgba(139, 92, 246, 0.08);
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.08);
+}
+
+.tipo-equipamento-opcao > svg {
+    flex-shrink: 0;
+    color: var(--roxo);
+}
+
+.tipo-equipamento-opcao:nth-child(2) > svg {
+    color: var(--azul);
+}
+
+.tipo-equipamento-opcao div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tipo-equipamento-opcao strong {
     font-size: 13px;
 }
 
-.modal-disponibilidade strong {
-    color: var(--preto);
+.tipo-equipamento-opcao span {
+    color: var(--cinza);
+    font-size: 11px;
 }
 
-.modal-erro {
-    margin-bottom: 18px;
-    padding: 11px 12px;
 
-    border: 1px solid #fecaca;
+/* =========================================================
+   ERRO DO FORMULÁRIO
+========================================================= */
+
+.erro-formulario {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+
+    padding: 12px 13px;
+    margin-bottom: 18px;
+
+    border: 1px solid rgba(239, 68, 68, 0.25);
     border-radius: 8px;
 
-    background: #fef2f2;
-    color: #b91c1c;
+    background: rgba(239, 68, 68, 0.08);
+    color: #ef4444;
 
     font-size: 13px;
 }
+
+.erro-formulario svg {
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+
+/* =========================================================
+   AÇÕES DO MODAL
+========================================================= */
 
 .modal-acoes {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
 
-    padding-top: 4px;
+    padding-top: 8px;
 }
 
-.modal-acoes .botao {
-    min-height: 40px;
+.botao-cancelar,
+.botao-salvar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    height: 40px;
+    padding: 0 16px;
+
+    border-radius: 8px;
+
+    font-size: 13px;
+    font-weight: 600;
 }
 
-.modal-acoes .botao:disabled {
+.botao-cancelar {
+    border: 1px solid var(--borda);
+
+    background: transparent;
+    color: var(--preto);
+}
+
+.botao-cancelar:hover:not(:disabled) {
+    background: var(--fundo);
+}
+
+.botao-salvar {
+    border: 1px solid var(--roxo);
+
+    background: var(--roxo);
+    color: #ffffff;
+}
+
+.botao-salvar:hover:not(:disabled) {
+    background: #7c3aed;
+}
+
+.botao-cancelar:disabled,
+.botao-salvar:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+}
+
+
+/* =========================================================
+   LOADING
+========================================================= */
+
+.relatorios-loading {
+    min-height: 300px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    color: var(--cinza);
+
+    font-size: 14px;
+}
+
+.relatorios-loading-icon {
+    animation: girar 1s linear infinite;
+}
+
+
+/* =========================================================
+   ANIMAÇÃO
+========================================================= */
+
+.girando {
+    animation: girar 1s linear infinite;
+}
+
+@keyframes girar {
+
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+
+}
+
+
+/* =========================================================
+   RESPONSIVIDADE
+========================================================= */
+
+@media (max-width: 1000px) {
+
+    .emprestimos .cards {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .emprestimos .card:last-child {
+        grid-column: span 2;
+    }
+
+    .lista-cabecalho {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .emprestimos-busca {
+        width: 100%;
+    }
+
+}
+
+
+@media (max-width: 700px) {
+
+    .emprestimos-cabecalho {
+        flex-direction: column;
+    }
+
+    .emprestimos-acoes {
+        width: 100%;
+    }
+
+    .botao-atualizar,
+    .botao-novo-emprestimo {
+        flex: 1;
+    }
+
+    .emprestimos .cards {
+        grid-template-columns: 1fr;
+    }
+
+    .emprestimos .card:last-child {
+        grid-column: auto;
+    }
+
+    .emprestimos-resumo {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .tipo-equipamento-opcoes {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-acoes {
+        flex-direction: column-reverse;
+    }
+
+    .botao-cancelar,
+    .botao-salvar {
+        width: 100%;
+    }
+
+}
+
+
+@media (max-width: 500px) {
+
+    .emprestimos-cabecalho h1 {
+        font-size: 26px;
+    }
+
+    .emprestimos .card {
+        padding: 18px;
+    }
+
+    .lista-cabecalho {
+        padding: 18px;
+    }
+
+    .modal-overlay {
+        padding: 10px;
+    }
+
+    .modal-cabecalho,
+    .modal-emprestimo form {
+        padding: 18px;
+    }
+
 }

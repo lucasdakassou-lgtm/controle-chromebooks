@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+
 import {
     RefreshCw,
     BarChart3,
@@ -9,10 +10,32 @@ import {
     Monitor
 } from "lucide-react";
 
+import {
+    ResponsiveContainer,
+    BarChart,
+    Bar,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    LineChart,
+    Line,
+    PieChart,
+    Pie,
+    Cell
+} from "recharts";
+
 import api from "../../services/api";
 import "./Relatorios.css";
 
+
 function Relatorios() {
+
+    // =========================================================
+    // DADOS DOS RELATÓRIOS
+    // =========================================================
+
     const [dados, setDados] = useState({
         professores: [],
         agendamentosProfessores: [],
@@ -25,18 +48,51 @@ function Relatorios() {
         turmasEmprestimos: []
     });
 
+
+    // =========================================================
+    // FILTROS
+    // =========================================================
+
     const [dataInicio, setDataInicio] = useState("");
     const [dataFim, setDataFim] = useState("");
-
     const [filtroAplicado, setFiltroAplicado] = useState(false);
+
+
+    // =========================================================
+    // ESTADOS
+    // =========================================================
+
     const [carregando, setCarregando] = useState(true);
     const [erro, setErro] = useState("");
+
+
+    // =========================================================
+    // CORES DOS GRÁFICOS
+    // =========================================================
+
+    const CORES = [
+        "#8b5cf6",
+        "#2563eb",
+        "#f97316",
+        "#10b981",
+        "#ef4444",
+        "#eab308",
+        "#06b6d4",
+        "#ec4899"
+    ];
+
+
+    // =========================================================
+    // CARREGAR RELATÓRIOS
+    // =========================================================
 
     async function carregarRelatorios(
         inicio = dataInicio,
         fim = dataFim
     ) {
+
         try {
+
             setCarregando(true);
             setErro("");
 
@@ -50,6 +106,7 @@ function Relatorios() {
                 params.data_fim = fim;
             }
 
+
             const [
                 professores,
                 agendamentosProfessores,
@@ -61,65 +118,93 @@ function Relatorios() {
                 turmasAgendamentos,
                 turmasEmprestimos
             ] = await Promise.all([
-                api.get("/relatorios/ranking-professores", {
-                    params
-                }),
 
-                api.get("/relatorios/ranking-agendamentos-professores", {
-                    params
-                }),
+                api.get(
+                    "/relatorios/ranking-professores",
+                    { params }
+                ),
 
-                api.get("/relatorios/ocorrencias-salas", {
-                    params
-                }),
+                api.get(
+                    "/relatorios/ranking-agendamentos-professores",
+                    { params }
+                ),
 
-                api.get("/relatorios/ocorrencias-professores", {
-                    params
-                }),
+                api.get(
+                    "/relatorios/ocorrencias-salas",
+                    { params }
+                ),
 
-                api.get("/relatorios/ocorrencias-tipos", {
-                    params
-                }),
+                api.get(
+                    "/relatorios/ocorrencias-professores",
+                    { params }
+                ),
 
-                api.get("/relatorios/ocorrencias-meses", {
-                    params
-                }),
+                api.get(
+                    "/relatorios/ocorrencias-tipos",
+                    { params }
+                ),
 
-                api.get("/relatorios/agendamentos-salas", {
-                    params
-                }),
+                api.get(
+                    "/relatorios/ocorrencias-meses",
+                    { params }
+                ),
 
-                api.get("/relatorios/agendamentos-turmas", {
-                    params
-                }),
+                api.get(
+                    "/relatorios/agendamentos-salas",
+                    { params }
+                ),
 
-                api.get("/relatorios/emprestimos-turmas", {
-                    params
-                })
+                api.get(
+                    "/relatorios/agendamentos-turmas",
+                    { params }
+                ),
+
+                api.get(
+                    "/relatorios/emprestimos-turmas",
+                    { params }
+                )
+
             ]);
 
+
             setDados({
-                professores: professores.data.dados || [],
+
+                professores:
+                    professores.data.dados || [],
+
                 agendamentosProfessores:
                     agendamentosProfessores.data.dados || [],
+
                 salasOcorrencias:
                     salasOcorrencias.data.dados || [],
+
                 professoresOcorrencias:
                     professoresOcorrencias.data.dados || [],
+
                 tiposOcorrencias:
                     tiposOcorrencias.data.dados || [],
+
                 mesesOcorrencias:
                     mesesOcorrencias.data.dados || [],
+
                 salasAgendamentos:
                     salasAgendamentos.data.dados || [],
+
                 turmasAgendamentos:
                     turmasAgendamentos.data.dados || [],
+
                 turmasEmprestimos:
                     turmasEmprestimos.data.dados || []
+
             });
 
-            console.log("[RELATORIOS] Relatórios carregados.");
+
+            console.log(
+                "[RELATORIOS] Relatórios carregados."
+            );
+
         } catch (erro) {
+
             console.error(
                 "[RELATORIOS] Erro ao carregar relatórios:",
                 erro
@@ -129,132 +214,411 @@ function Relatorios() {
                 erro.response?.data?.mensagem ||
                 "Não foi possível carregar os relatórios."
             );
+
         } finally {
+
             setCarregando(false);
+
         }
+
     }
 
+
+    // =========================================================
+    // CARREGAMENTO INICIAL
+    // =========================================================
+
     useEffect(() => {
+
         carregarRelatorios();
+
     }, []);
 
+
+    // =========================================================
+    // APLICAR FILTROS
+    // =========================================================
+
     function aplicarFiltros() {
-        if (dataInicio && dataFim && dataInicio > dataFim) {
+
+        if (
+            dataInicio &&
+            dataFim &&
+            dataInicio > dataFim
+        ) {
+
             setErro(
                 "A data inicial não pode ser maior que a data final."
             );
 
             return;
+
         }
+
 
         setFiltroAplicado(
             Boolean(dataInicio || dataFim)
         );
 
+
         carregarRelatorios(
             dataInicio,
             dataFim
         );
+
     }
 
+
+    // =========================================================
+    // LIMPAR FILTROS
+    // =========================================================
+
     function limparFiltros() {
+
         setDataInicio("");
         setDataFim("");
         setFiltroAplicado(false);
 
-        carregarRelatorios("", "");
-    }
-
-    function maiorValor(lista, campo) {
-        if (!lista.length) {
-            return 0;
-        }
-
-        return Math.max(
-            ...lista.map((item) => Number(item[campo]) || 0)
+        carregarRelatorios(
+            "",
+            ""
         );
+
     }
 
-    function porcentagem(valor, maior) {
-        if (!maior) {
-            return 0;
-        }
 
-        return Math.round(
-            (Number(valor) / maior) * 100
-        );
-    }
+    // =========================================================
+    // FORMATAR NÚMERO
+    // =========================================================
 
     function formatarNumero(valor) {
-        return Number(valor || 0).toLocaleString("pt-BR");
+
+        return Number(
+            valor || 0
+        ).toLocaleString("pt-BR");
+
     }
 
+
+    // =========================================================
+    // FORMATAR MÊS
+    // =========================================================
+
     function formatarMes(valor) {
+
         if (!valor) {
             return "-";
         }
 
-        const data = new Date(`${valor}-01T00:00:00`);
 
-        if (Number.isNaN(data.getTime())) {
+        const data = new Date(
+            `${valor}-01T00:00:00`
+        );
+
+
+        if (
+            Number.isNaN(
+                data.getTime()
+            )
+        ) {
+
             return valor;
+
         }
 
-        return data.toLocaleDateString("pt-BR", {
-            month: "long",
-            year: "numeric"
-        });
+
+        return data.toLocaleDateString(
+            "pt-BR",
+            {
+                month: "short",
+                year: "numeric"
+            }
+        );
+
     }
 
-    const maiorEmprestimo = maiorValor(
-        dados.professores,
-        "total_chromebooks"
-    );
 
-    const maiorAgendamento = maiorValor(
-        dados.agendamentosProfessores,
-        "total_agendamentos"
-    );
+    // =========================================================
+    // NOME CURTO
+    // =========================================================
 
-    const maiorSalaOcorrencia = maiorValor(
-        dados.salasOcorrencias,
-        "total_ocorrencias"
-    );
+    function nomeCurto(
+        nome,
+        limite = 18
+    ) {
 
-    const maiorProfessorOcorrencia = maiorValor(
-        dados.professoresOcorrencias,
-        "total_ocorrencias"
-    );
+        if (!nome) {
+            return "-";
+        }
 
-    const maiorTipoOcorrencia = maiorValor(
-        dados.tiposOcorrencias,
-        "total_ocorrencias"
-    );
 
-    const maiorMesOcorrencia = maiorValor(
-        dados.mesesOcorrencias,
-        "total_ocorrencias"
-    );
+        if (
+            nome.length <= limite
+        ) {
 
-    const maiorSalaAgendamento = maiorValor(
-        dados.salasAgendamentos,
-        "total_agendamentos"
-    );
+            return nome;
 
-    const maiorTurmaAgendamento = maiorValor(
-        dados.turmasAgendamentos,
-        "total_agendamentos"
-    );
+        }
 
-    const maiorTurmaEmprestimo = maiorValor(
-        dados.turmasEmprestimos,
-        "total_chromebooks"
-    );
+
+        return `${nome.substring(
+            0,
+            limite
+        )}...`;
+
+    }
+
+
+    // =========================================================
+    // TOOLTIP
+    // =========================================================
+
+    function TooltipPersonalizado({
+        active,
+        payload,
+        label
+    }) {
+
+        if (
+            !active ||
+            !payload ||
+            !payload.length
+        ) {
+
+            return null;
+
+        }
+
+
+        return (
+
+            <div className="grafico-tooltip">
+
+                <strong>
+                    {label}
+                </strong>
+
+
+                {payload.map(
+                    (item, index) => (
+
+                        <div
+                            key={index}
+                            className="grafico-tooltip-item"
+                        >
+
+                            <span>
+                                {item.name}
+                            </span>
+
+                            <strong>
+                                {formatarNumero(
+                                    item.value
+                                )}
+                            </strong>
+
+                        </div>
+
+                    )
+                )}
+
+            </div>
+
+        );
+
+    }
+
+
+    // =========================================================
+    // DADOS DOS GRÁFICOS
+    //
+    // Só entram registros maiores que zero.
+    // Depois ordenamos do maior para o menor.
+    // Por fim mostramos apenas os 5 primeiros.
+    // =========================================================
+
+    const graficoEmprestimosProfessores =
+        dados.professores
+            .map((professor) => ({
+                nome: nomeCurto(
+                    professor.nome
+                ),
+                total: Number(
+                    professor.total_chromebooks
+                ) || 0
+            }))
+            .filter(
+                (professor) =>
+                    professor.total > 0
+            )
+            .sort(
+                (a, b) =>
+                    b.total - a.total
+            )
+            .slice(0, 5);
+
+
+    const graficoAgendamentosProfessores =
+        dados.agendamentosProfessores
+            .map((professor) => ({
+                nome: nomeCurto(
+                    professor.nome
+                ),
+                total: Number(
+                    professor.total_agendamentos
+                ) || 0
+            }))
+            .filter(
+                (professor) =>
+                    professor.total > 0
+            )
+            .sort(
+                (a, b) =>
+                    b.total - a.total
+            )
+            .slice(0, 5);
+
+
+    const graficoSalasOcorrencias =
+        dados.salasOcorrencias
+            .map((sala) => ({
+                nome: nomeCurto(
+                    sala.sala
+                ),
+                total: Number(
+                    sala.total_ocorrencias
+                ) || 0
+            }))
+            .filter(
+                (sala) =>
+                    sala.total > 0
+            )
+            .sort(
+                (a, b) =>
+                    b.total - a.total
+            );
+
+
+    const graficoProfessoresOcorrencias =
+        dados.professoresOcorrencias
+            .map((professor) => ({
+                nome: nomeCurto(
+                    professor.nome
+                ),
+                total: Number(
+                    professor.total_ocorrencias
+                ) || 0
+            }))
+            .filter(
+                (professor) =>
+                    professor.total > 0
+            )
+            .sort(
+                (a, b) =>
+                    b.total - a.total
+            )
+            .slice(0, 5);
+
+
+    const graficoTiposOcorrencias =
+        dados.tiposOcorrencias
+            .map((tipo) => ({
+                nome: tipo.tipo,
+                total: Number(
+                    tipo.total_ocorrencias
+                ) || 0
+            }))
+            .filter(
+                (tipo) =>
+                    tipo.total > 0
+            );
+
+
+    const graficoMesesOcorrencias =
+        dados.mesesOcorrencias.map(
+            (mes) => ({
+                mes: formatarMes(
+                    mes.mes
+                ),
+                total: Number(
+                    mes.total_ocorrencias
+                ) || 0
+            })
+        );
+
+
+    const graficoSalasAgendamentos =
+        dados.salasAgendamentos
+            .map((sala) => ({
+                nome: nomeCurto(
+                    sala.sala
+                ),
+                total: Number(
+                    sala.total_agendamentos
+                ) || 0
+            }))
+            .filter(
+                (sala) =>
+                    sala.total > 0
+            )
+            .sort(
+                (a, b) =>
+                    b.total - a.total
+            );
+
+
+    const graficoTurmasAgendamentos =
+        dados.turmasAgendamentos
+            .map((turma) => ({
+                nome: nomeCurto(
+                    turma.nome
+                ),
+                total: Number(
+                    turma.total_agendamentos
+                ) || 0
+            }))
+            .filter(
+                (turma) =>
+                    turma.total > 0
+            )
+            .sort(
+                (a, b) =>
+                    b.total - a.total
+            );
+
+
+    const graficoTurmasEmprestimos =
+        dados.turmasEmprestimos
+            .map((turma) => ({
+                nome: nomeCurto(
+                    turma.nome
+                ),
+                total: Number(
+                    turma.total_chromebooks
+                ) || 0
+            }))
+            .filter(
+                (turma) =>
+                    turma.total > 0
+            )
+            .sort(
+                (a, b) =>
+                    b.total - a.total
+            );
+
+
+    // =========================================================
+    // CARREGANDO
+    // =========================================================
 
     if (carregando) {
+
         return (
+
             <main className="relatorios-page">
+
                 <div className="relatorios-loading">
+
                     <RefreshCw
                         size={22}
                         className="relatorios-loading-icon"
@@ -263,29 +627,49 @@ function Relatorios() {
                     <span>
                         Carregando relatórios...
                     </span>
+
                 </div>
+
             </main>
+
         );
+
     }
 
+
+    // =========================================================
+    // PÁGINA
+    // =========================================================
+
     return (
+
         <main className="relatorios-page">
+
+
+            {/* =====================================================
+                CABEÇALHO
+            ====================================================== */}
 
             <header className="relatorios-cabecalho">
 
                 <div>
+
                     <div className="relatorios-titulo">
+
                         <BarChart3 size={24} />
 
                         <h1>
                             Relatórios
                         </h1>
+
                     </div>
 
                     <p>
                         Análise histórica e utilização do sistema.
                     </p>
+
                 </div>
+
 
                 <button
                     className="relatorios-atualizar"
@@ -293,18 +677,26 @@ function Relatorios() {
                         carregarRelatorios()
                     }
                 >
+
                     <RefreshCw size={17} />
 
                     Atualizar
+
                 </button>
 
             </header>
+
+
+            {/* =====================================================
+                FILTROS
+            ====================================================== */}
 
             <section className="relatorios-filtros">
 
                 <div className="filtros-titulo">
 
                     <div>
+
                         <h2>
                             Filtros
                         </h2>
@@ -312,15 +704,20 @@ function Relatorios() {
                         <p>
                             Defina o período para analisar os dados.
                         </p>
+
                     </div>
 
+
                     {filtroAplicado && (
+
                         <span className="filtro-status">
                             Filtro aplicado
                         </span>
+
                     )}
 
                 </div>
+
 
                 <div className="filtros-controles">
 
@@ -335,11 +732,14 @@ function Relatorios() {
                             type="date"
                             value={dataInicio}
                             onChange={(e) =>
-                                setDataInicio(e.target.value)
+                                setDataInicio(
+                                    e.target.value
+                                )
                             }
                         />
 
                     </div>
+
 
                     <div className="filtro-campo">
 
@@ -352,11 +752,14 @@ function Relatorios() {
                             type="date"
                             value={dataFim}
                             onChange={(e) =>
-                                setDataFim(e.target.value)
+                                setDataFim(
+                                    e.target.value
+                                )
                             }
                         />
 
                     </div>
+
 
                     <div className="filtros-acoes">
 
@@ -380,27 +783,42 @@ function Relatorios() {
 
             </section>
 
+
+            {/* =====================================================
+                ERRO
+            ====================================================== */}
+
             {erro && (
+
                 <div className="relatorios-erro">
+
                     <AlertTriangle size={18} />
 
                     <span>
                         {erro}
                     </span>
+
                 </div>
+
             )}
 
-            {/* RANKINGS */}
+
+            {/* =====================================================
+                RANKINGS
+            ====================================================== */}
 
             <section className="relatorios-secao">
 
                 <div className="secao-cabecalho">
 
                     <div className="secao-icone">
+
                         <Users size={19} />
+
                     </div>
 
                     <div>
+
                         <h2>
                             Rankings
                         </h2>
@@ -408,17 +826,25 @@ function Relatorios() {
                         <p>
                             Principais movimentações realizadas por professores.
                         </p>
+
                     </div>
 
                 </div>
 
+
                 <div className="relatorios-grid">
 
-                    <article className="relatorio-card">
+
+                    {/* =================================================
+                        EMPRÉSTIMOS POR PROFESSOR
+                    ================================================== */}
+
+                    <article className="relatorio-card grafico-card">
 
                         <div className="card-cabecalho">
 
                             <div>
+
                                 <h3>
                                     Empréstimos por professor
                                 </h3>
@@ -426,76 +852,111 @@ function Relatorios() {
                                 <p>
                                     Quantidade de Chromebooks retirados.
                                 </p>
+
                             </div>
 
                             <Monitor size={20} />
 
                         </div>
 
-                        <div className="ranking-lista">
 
-                            {dados.professores.length === 0 ? (
-                                <div className="relatorio-vazio">
-                                    Nenhum dado encontrado.
+                        <div className="grafico-container grafico-horizontal">
+
+                            {graficoEmprestimosProfessores.length === 0 ? (
+
+                                <div className="grafico-sem-dados">
+
+                                    <Monitor size={28} />
+
+                                    <strong>
+                                        Nenhum empréstimo registrado
+                                    </strong>
+
+                                    <span>
+                                        Não existem empréstimos no período selecionado.
+                                    </span>
+
                                 </div>
+
                             ) : (
-                                dados.professores.map(
-                                    (professor, index) => (
-                                        <div
-                                            className="ranking-item"
-                                            key={professor.id}
-                                        >
 
-                                            <div className="ranking-topo">
+                                <ResponsiveContainer
+                                    width="100%"
+                                    height={320}
+                                >
 
-                                                <div className="ranking-nome">
+                                    <BarChart
+                                        data={
+                                            graficoEmprestimosProfessores
+                                        }
+                                        layout="vertical"
+                                        margin={{
+                                            top: 5,
+                                            right: 20,
+                                            left: 20,
+                                            bottom: 5
+                                        }}
+                                    >
 
-                                                    <span className="ranking-posicao">
-                                                        {index + 1}
-                                                    </span>
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                            horizontal={false}
+                                        />
 
-                                                    <span>
-                                                        {professor.nome}
-                                                    </span>
+                                        <XAxis
+                                            type="number"
+                                            allowDecimals={false}
+                                        />
 
-                                                </div>
+                                        <YAxis
+                                            type="category"
+                                            dataKey="nome"
+                                            width={125}
+                                            tick={{
+                                                fontSize: 12
+                                            }}
+                                        />
 
-                                                <strong>
-                                                    {formatarNumero(
-                                                        professor.total_chromebooks
-                                                    )}
-                                                </strong>
+                                        <Tooltip
+                                            content={
+                                                <TooltipPersonalizado />
+                                            }
+                                        />
 
-                                            </div>
+                                        <Bar
+                                            dataKey="total"
+                                            name="Chromebooks"
+                                            fill="#8b5cf6"
+                                            radius={[
+                                                0,
+                                                6,
+                                                6,
+                                                0
+                                            ]}
+                                            barSize={24}
+                                        />
 
-                                            <div className="barra-fundo">
+                                    </BarChart>
 
-                                                <div
-                                                    className="barra-preenchida barra-roxa"
-                                                    style={{
-                                                        width: `${porcentagem(
-                                                            professor.total_chromebooks,
-                                                            maiorEmprestimo
-                                                        )}%`
-                                                    }}
-                                                />
+                                </ResponsiveContainer>
 
-                                            </div>
-
-                                        </div>
-                                    )
-                                )
                             )}
 
                         </div>
 
                     </article>
 
-                    <article className="relatorio-card">
+
+                    {/* =================================================
+                        AGENDAMENTOS POR PROFESSOR
+                    ================================================== */}
+
+                    <article className="relatorio-card grafico-card">
 
                         <div className="card-cabecalho">
 
                             <div>
+
                                 <h3>
                                     Agendamentos por professor
                                 </h3>
@@ -503,65 +964,94 @@ function Relatorios() {
                                 <p>
                                     Quantidade de reservas realizadas.
                                 </p>
+
                             </div>
 
                             <CalendarDays size={20} />
 
                         </div>
 
-                        <div className="ranking-lista">
 
-                            {dados.agendamentosProfessores.length === 0 ? (
-                                <div className="relatorio-vazio">
-                                    Nenhum dado encontrado.
+                        <div className="grafico-container grafico-horizontal">
+
+                            {graficoAgendamentosProfessores.length === 0 ? (
+
+                                <div className="grafico-sem-dados">
+
+                                    <CalendarDays size={28} />
+
+                                    <strong>
+                                        Nenhum agendamento registrado
+                                    </strong>
+
+                                    <span>
+                                        Não existem reservas no período selecionado.
+                                    </span>
+
                                 </div>
+
                             ) : (
-                                dados.agendamentosProfessores.map(
-                                    (professor, index) => (
-                                        <div
-                                            className="ranking-item"
-                                            key={professor.id}
-                                        >
 
-                                            <div className="ranking-topo">
+                                <ResponsiveContainer
+                                    width="100%"
+                                    height={320}
+                                >
 
-                                                <div className="ranking-nome">
+                                    <BarChart
+                                        data={
+                                            graficoAgendamentosProfessores
+                                        }
+                                        layout="vertical"
+                                        margin={{
+                                            top: 5,
+                                            right: 20,
+                                            left: 20,
+                                            bottom: 5
+                                        }}
+                                    >
 
-                                                    <span className="ranking-posicao">
-                                                        {index + 1}
-                                                    </span>
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                            horizontal={false}
+                                        />
 
-                                                    <span>
-                                                        {professor.nome}
-                                                    </span>
+                                        <XAxis
+                                            type="number"
+                                            allowDecimals={false}
+                                        />
 
-                                                </div>
+                                        <YAxis
+                                            type="category"
+                                            dataKey="nome"
+                                            width={125}
+                                            tick={{
+                                                fontSize: 12
+                                            }}
+                                        />
 
-                                                <strong>
-                                                    {formatarNumero(
-                                                        professor.total_agendamentos
-                                                    )}
-                                                </strong>
+                                        <Tooltip
+                                            content={
+                                                <TooltipPersonalizado />
+                                            }
+                                        />
 
-                                            </div>
+                                        <Bar
+                                            dataKey="total"
+                                            name="Agendamentos"
+                                            fill="#2563eb"
+                                            radius={[
+                                                0,
+                                                6,
+                                                6,
+                                                0
+                                            ]}
+                                            barSize={24}
+                                        />
 
-                                            <div className="barra-fundo">
+                                    </BarChart>
 
-                                                <div
-                                                    className="barra-preenchida barra-azul"
-                                                    style={{
-                                                        width: `${porcentagem(
-                                                            professor.total_agendamentos,
-                                                            maiorAgendamento
-                                                        )}%`
-                                                    }}
-                                                />
+                                </ResponsiveContainer>
 
-                                            </div>
-
-                                        </div>
-                                    )
-                                )
                             )}
 
                         </div>
@@ -572,17 +1062,23 @@ function Relatorios() {
 
             </section>
 
-            {/* OCORRÊNCIAS */}
+
+            {/* =====================================================
+                OCORRÊNCIAS
+            ====================================================== */}
 
             <section className="relatorios-secao">
 
                 <div className="secao-cabecalho">
 
                     <div className="secao-icone secao-icone-laranja">
+
                         <AlertTriangle size={19} />
+
                     </div>
 
                     <div>
+
                         <h2>
                             Ocorrências
                         </h2>
@@ -590,19 +1086,25 @@ function Relatorios() {
                         <p>
                             Histórico e distribuição das ocorrências registradas.
                         </p>
+
                     </div>
 
                 </div>
 
+
                 <div className="relatorios-grid">
 
-                    {/* OCORRÊNCIAS POR SALA */}
 
-                    <article className="relatorio-card">
+                    {/* =================================================
+                        OCORRÊNCIAS POR SALA
+                    ================================================== */}
+
+                    <article className="relatorio-card grafico-card">
 
                         <div className="card-cabecalho">
 
                             <div>
+
                                 <h3>
                                     Ocorrências por sala
                                 </h3>
@@ -610,70 +1112,103 @@ function Relatorios() {
                                 <p>
                                     Salas com maior quantidade de ocorrências.
                                 </p>
+
                             </div>
 
                             <AlertTriangle size={20} />
 
                         </div>
 
-                        <div className="dados-lista">
 
-                            {dados.salasOcorrencias.length === 0 ? (
-                                <div className="relatorio-vazio">
-                                    Nenhum dado encontrado.
+                        <div className="grafico-container grafico-horizontal">
+
+                            {graficoSalasOcorrencias.length === 0 ? (
+
+                                <div className="grafico-sem-dados">
+
+                                    <AlertTriangle size={28} />
+
+                                    <strong>
+                                        Nenhuma ocorrência registrada
+                                    </strong>
+
+                                    <span>
+                                        Não existem ocorrências no período selecionado.
+                                    </span>
+
                                 </div>
+
                             ) : (
-                                dados.salasOcorrencias.map(
-                                    (sala) => (
-                                        <div
-                                            className="dado-item"
-                                            key={sala.sala}
-                                        >
 
-                                            <div className="dado-topo">
+                               <ResponsiveContainer
+    width="100%"
+    height={320}
+>
+    <BarChart
+        data={graficoSalasOcorrencias}
+        margin={{
+            top: 10,
+            right: 20,
+            left: 0,
+            bottom: 10
+        }}
+    >
 
-                                                <span>
-                                                    {sala.sala}
-                                                </span>
+        <CartesianGrid
+            strokeDasharray="3 3"
+            vertical={false}
+        />
 
-                                                <strong>
-                                                    {formatarNumero(
-                                                        sala.total_ocorrencias
-                                                    )}
-                                                </strong>
+        <XAxis
+            dataKey="nome"
+            tick={{
+                fontSize: 12
+            }}
+        />
 
-                                            </div>
+        <YAxis
+            allowDecimals={false}
+        />
 
-                                            <div className="barra-fundo">
+        <Tooltip
+            content={
+                <TooltipPersonalizado />
+            }
+        />
 
-                                                <div
-                                                    className="barra-preenchida barra-laranja"
-                                                    style={{
-                                                        width: `${porcentagem(
-                                                            sala.total_ocorrencias,
-                                                            maiorSalaOcorrencia
-                                                        )}%`
-                                                    }}
-                                                />
+        <Bar
+            dataKey="total"
+            name="Ocorrências"
+            fill="#ffffff"
+            radius={[
+                6,
+                6,
+                0,
+                0
+            ]}
+            barSize={42}
+        />
 
-                                            </div>
+    </BarChart>
+</ResponsiveContainer>
 
-                                        </div>
-                                    )
-                                )
                             )}
 
                         </div>
 
                     </article>
 
-                    {/* TIPOS */}
 
-                    <article className="relatorio-card">
+                    {/* =================================================
+                        TIPOS DE OCORRÊNCIA
+                    ================================================== */}
+
+                    <article className="relatorio-card grafico-card">
 
                         <div className="card-cabecalho">
 
                             <div>
+
                                 <h3>
                                     Tipos de ocorrência
                                 </h3>
@@ -681,70 +1216,104 @@ function Relatorios() {
                                 <p>
                                     Principais motivos registrados.
                                 </p>
+
                             </div>
 
                             <AlertTriangle size={20} />
 
                         </div>
 
-                        <div className="dados-lista">
 
-                            {dados.tiposOcorrencias.length === 0 ? (
-                                <div className="relatorio-vazio">
-                                    Nenhum dado encontrado.
+                        <div className="grafico-container grafico-pizza">
+
+                            {graficoTiposOcorrencias.length === 0 ? (
+
+                                <div className="grafico-sem-dados">
+
+                                    <AlertTriangle size={28} />
+
+                                    <strong>
+                                        Nenhuma ocorrência registrada
+                                    </strong>
+
+                                    <span>
+                                        Não existem tipos de ocorrência no período.
+                                    </span>
+
                                 </div>
+
                             ) : (
-                                dados.tiposOcorrencias.map(
-                                    (tipo) => (
-                                        <div
-                                            className="dado-item"
-                                            key={tipo.tipo}
+
+                                <ResponsiveContainer
+                                    width="100%"
+                                    height={320}
+                                >
+
+                                    <PieChart>
+
+                                        <Pie
+                                            data={
+                                                graficoTiposOcorrencias
+                                            }
+                                            dataKey="total"
+                                            nameKey="nome"
+                                            cx="50%"
+                                            cy="45%"
+                                            outerRadius={95}
+                                            innerRadius={55}
+                                            paddingAngle={3}
                                         >
 
-                                            <div className="dado-topo">
+                                            {graficoTiposOcorrencias.map(
+                                                (_, index) => (
 
-                                                <span>
-                                                    {tipo.tipo}
-                                                </span>
+                                                    <Cell
+                                                        key={
+                                                            `celula-${index}`
+                                                        }
+                                                        fill={
+                                                            CORES[
+                                                                index %
+                                                                CORES.length
+                                                            ]
+                                                        }
+                                                    />
 
-                                                <strong>
-                                                    {formatarNumero(
-                                                        tipo.total_ocorrencias
-                                                    )}
-                                                </strong>
+                                                )
+                                            )}
 
-                                            </div>
+                                        </Pie>
 
-                                            <div className="barra-fundo">
 
-                                                <div
-                                                    className="barra-preenchida barra-laranja"
-                                                    style={{
-                                                        width: `${porcentagem(
-                                                            tipo.total_ocorrencias,
-                                                            maiorTipoOcorrencia
-                                                        )}%`
-                                                    }}
-                                                />
+                                        <Tooltip
+                                            content={
+                                                <TooltipPersonalizado />
+                                            }
+                                        />
 
-                                            </div>
+                                        <Legend />
 
-                                        </div>
-                                    )
-                                )
+                                    </PieChart>
+
+                                </ResponsiveContainer>
+
                             )}
 
                         </div>
 
                     </article>
 
-                    {/* PROFESSORES */}
 
-                    <article className="relatorio-card">
+                    {/* =================================================
+                        OCORRÊNCIAS POR PROFESSOR
+                    ================================================== */}
+
+                    <article className="relatorio-card grafico-card">
 
                         <div className="card-cabecalho">
 
                             <div>
+
                                 <h3>
                                     Ocorrências por professor
                                 </h3>
@@ -752,128 +1321,201 @@ function Relatorios() {
                                 <p>
                                     Professores que mais registraram ocorrências.
                                 </p>
+
                             </div>
 
                             <Users size={20} />
 
                         </div>
 
-                        <div className="dados-lista">
 
-                            {dados.professoresOcorrencias.length === 0 ? (
-                                <div className="relatorio-vazio">
-                                    Nenhum dado encontrado.
+                        <div className="grafico-container grafico-horizontal">
+
+                            {graficoProfessoresOcorrencias.length === 0 ? (
+
+                                <div className="grafico-sem-dados">
+
+                                    <Users size={28} />
+
+                                    <strong>
+                                        Nenhuma ocorrência registrada
+                                    </strong>
+
+                                    <span>
+                                        Não existem ocorrências no período selecionado.
+                                    </span>
+
                                 </div>
+
                             ) : (
-                                dados.professoresOcorrencias.map(
-                                    (professor) => (
-                                        <div
-                                            className="dado-item"
-                                            key={professor.id}
-                                        >
 
-                                            <div className="dado-topo">
+                                <ResponsiveContainer
+                                    width="100%"
+                                    height={320}
+                                >
 
-                                                <span>
-                                                    {professor.nome}
-                                                </span>
+                                    <BarChart
+                                        data={
+                                            graficoProfessoresOcorrencias
+                                        }
+                                        layout="vertical"
+                                        margin={{
+                                            top: 5,
+                                            right: 20,
+                                            left: 20,
+                                            bottom: 5
+                                        }}
+                                    >
 
-                                                <strong>
-                                                    {formatarNumero(
-                                                        professor.total_ocorrencias
-                                                    )}
-                                                </strong>
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                            horizontal={false}
+                                        />
 
-                                            </div>
+                                        <XAxis
+                                            type="number"
+                                            allowDecimals={false}
+                                        />
 
-                                            <div className="barra-fundo">
+                                        <YAxis
+                                            type="category"
+                                            dataKey="nome"
+                                            width={125}
+                                            tick={{
+                                                fontSize: 12
+                                            }}
+                                        />
 
-                                                <div
-                                                    className="barra-preenchida barra-roxa"
-                                                    style={{
-                                                        width: `${porcentagem(
-                                                            professor.total_ocorrencias,
-                                                            maiorProfessorOcorrencia
-                                                        )}%`
-                                                    }}
-                                                />
+                                        <Tooltip
+                                            content={
+                                                <TooltipPersonalizado />
+                                            }
+                                        />
 
-                                            </div>
+                                        <Bar
+                                            dataKey="total"
+                                            name="Ocorrências"
+                                            fill="#8b5cf6"
+                                            radius={[
+                                                0,
+                                                6,
+                                                6,
+                                                0
+                                            ]}
+                                            barSize={24}
+                                        />
 
-                                        </div>
-                                    )
-                                )
+                                    </BarChart>
+
+                                </ResponsiveContainer>
+
                             )}
 
                         </div>
 
                     </article>
 
-                    {/* EVOLUÇÃO */}
 
-                    <article className="relatorio-card">
+                    {/* =================================================
+                        EVOLUÇÃO DAS OCORRÊNCIAS
+                    ================================================== */}
+
+                    <article className="relatorio-card grafico-card grafico-card-largo">
 
                         <div className="card-cabecalho">
 
                             <div>
+
                                 <h3>
                                     Evolução das ocorrências
                                 </h3>
 
                                 <p>
-                                    Quantidade de ocorrências por mês.
+                                    Quantidade de ocorrências registradas por mês.
                                 </p>
+
                             </div>
 
                             <BarChart3 size={20} />
 
                         </div>
 
-                        <div className="dados-lista">
 
-                            {dados.mesesOcorrencias.length === 0 ? (
-                                <div className="relatorio-vazio">
-                                    Nenhum dado encontrado.
+                        <div className="grafico-container">
+
+                            {graficoMesesOcorrencias.length === 0 ? (
+
+                                <div className="grafico-sem-dados">
+
+                                    <BarChart3 size={28} />
+
+                                    <strong>
+                                        Nenhum histórico encontrado
+                                    </strong>
+
+                                    <span>
+                                        Não existem ocorrências para analisar no período.
+                                    </span>
+
                                 </div>
+
                             ) : (
-                                dados.mesesOcorrencias.map(
-                                    (mes) => (
-                                        <div
-                                            className="dado-item"
-                                            key={mes.mes}
-                                        >
 
-                                            <div className="dado-topo">
+                                <ResponsiveContainer
+                                    width="100%"
+                                    height={320}
+                                >
 
-                                                <span>
-                                                    {formatarMes(mes.mes)}
-                                                </span>
+                                    <LineChart
+                                        data={
+                                            graficoMesesOcorrencias
+                                        }
+                                        margin={{
+                                            top: 10,
+                                            right: 20,
+                                            left: 0,
+                                            bottom: 10
+                                        }}
+                                    >
 
-                                                <strong>
-                                                    {formatarNumero(
-                                                        mes.total_ocorrencias
-                                                    )}
-                                                </strong>
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                        />
 
-                                            </div>
+                                        <XAxis
+                                            dataKey="mes"
+                                        />
 
-                                            <div className="barra-fundo">
+                                        <YAxis
+                                            allowDecimals={false}
+                                        />
 
-                                                <div
-                                                    className="barra-preenchida barra-azul"
-                                                    style={{
-                                                        width: `${porcentagem(
-                                                            mes.total_ocorrencias,
-                                                            maiorMesOcorrencia
-                                                        )}%`
-                                                    }}
-                                                />
+                                        <Tooltip
+                                            content={
+                                                <TooltipPersonalizado />
+                                            }
+                                        />
 
-                                            </div>
+                                        <Legend />
 
-                                        </div>
-                                    )
-                                )
+                                        <Line
+                                            type="monotone"
+                                            dataKey="total"
+                                            name="Ocorrências"
+                                            stroke="#2563eb"
+                                            strokeWidth={3}
+                                            dot={{
+                                                r: 5
+                                            }}
+                                            activeDot={{
+                                                r: 7
+                                            }}
+                                        />
+
+                                    </LineChart>
+
+                                </ResponsiveContainer>
+
                             )}
 
                         </div>
@@ -884,17 +1526,23 @@ function Relatorios() {
 
             </section>
 
-            {/* UTILIZAÇÃO */}
+
+            {/* =====================================================
+                UTILIZAÇÃO
+            ====================================================== */}
 
             <section className="relatorios-secao">
 
                 <div className="secao-cabecalho">
 
                     <div className="secao-icone secao-icone-azul">
+
                         <BookOpen size={19} />
+
                     </div>
 
                     <div>
+
                         <h2>
                             Utilização
                         </h2>
@@ -902,19 +1550,25 @@ function Relatorios() {
                         <p>
                             Análise do uso das salas, turmas e Chromebooks.
                         </p>
+
                     </div>
 
                 </div>
 
+
                 <div className="relatorios-grid">
 
-                    {/* SALAS */}
 
-                    <article className="relatorio-card">
+                    {/* =================================================
+                        AGENDAMENTOS POR SALA
+                    ================================================== */}
+
+                    <article className="relatorio-card grafico-card">
 
                         <div className="card-cabecalho">
 
                             <div>
+
                                 <h3>
                                     Agendamentos por sala
                                 </h3>
@@ -922,70 +1576,111 @@ function Relatorios() {
                                 <p>
                                     Utilização das salas através de reservas.
                                 </p>
+
                             </div>
 
                             <CalendarDays size={20} />
 
                         </div>
 
-                        <div className="dados-lista">
 
-                            {dados.salasAgendamentos.length === 0 ? (
-                                <div className="relatorio-vazio">
-                                    Nenhum dado encontrado.
+                        <div className="grafico-container grafico-horizontal">
+
+                            {graficoSalasAgendamentos.length === 0 ? (
+
+                                <div className="grafico-sem-dados">
+
+                                    <CalendarDays size={28} />
+
+                                    <strong>
+                                        Nenhum agendamento registrado
+                                    </strong>
+
+                                    <span>
+                                        Não existem reservas no período selecionado.
+                                    </span>
+
                                 </div>
+
                             ) : (
-                                dados.salasAgendamentos.map(
-                                    (sala) => (
-                                        <div
-                                            className="dado-item"
-                                            key={sala.sala}
-                                        >
 
-                                            <div className="dado-topo">
+                                <ResponsiveContainer
+                                    width="100%"
+                                    height={320}
+                                >
 
-                                                <span>
-                                                    {sala.sala}
-                                                </span>
+                                    <BarChart
+                                        data={
+                                            graficoSalasAgendamentos
+                                        }
+                                        layout="vertical"
+                                        margin={{
+                                            top: 5,
+                                            right: 20,
+                                            left: 20,
+                                            bottom: 5
+                                        }}
+                                    >
 
-                                                <strong>
-                                                    {formatarNumero(
-                                                        sala.total_agendamentos
-                                                    )}
-                                                </strong>
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                            horizontal={false}
+                                        />
 
-                                            </div>
+                                        <XAxis
+                                            type="number"
+                                            allowDecimals={false}
+                                        />
 
-                                            <div className="barra-fundo">
+                                        <YAxis
+                                            type="category"
+                                            dataKey="nome"
+                                            width={110}
+                                            tick={{
+                                                fontSize: 12
+                                            }}
+                                        />
 
-                                                <div
-                                                    className="barra-preenchida barra-azul"
-                                                    style={{
-                                                        width: `${porcentagem(
-                                                            sala.total_agendamentos,
-                                                            maiorSalaAgendamento
-                                                        )}%`
-                                                    }}
-                                                />
+                                        <Tooltip
+                                            content={
+                                                <TooltipPersonalizado />
+                                            }
+                                        />
 
-                                            </div>
+                                        <Bar
+                                            dataKey="total"
+                                            name="Agendamentos"
+                                            fill="#2563eb"
+                                            radius={[
+                                                0,
+                                                6,
+                                                6,
+                                                0
+                                            ]}
+                                            barSize={24}
+                                        />
 
-                                        </div>
-                                    )
-                                )
+                                    </BarChart>
+
+                                </ResponsiveContainer>
+
                             )}
 
                         </div>
 
                     </article>
 
-                    {/* TURMAS AGENDAMENTOS */}
 
-                    <article className="relatorio-card">
+                    {/* =================================================
+                        AGENDAMENTOS POR TURMA
+                    ================================================== */}
+
+                    <article className="relatorio-card grafico-card">
 
                         <div className="card-cabecalho">
 
                             <div>
+
                                 <h3>
                                     Agendamentos por turma
                                 </h3>
@@ -993,70 +1688,111 @@ function Relatorios() {
                                 <p>
                                     Turmas que mais utilizam as salas.
                                 </p>
+
                             </div>
 
                             <Users size={20} />
 
                         </div>
 
-                        <div className="dados-lista">
 
-                            {dados.turmasAgendamentos.length === 0 ? (
-                                <div className="relatorio-vazio">
-                                    Nenhum dado encontrado.
+                        <div className="grafico-container grafico-horizontal">
+
+                            {graficoTurmasAgendamentos.length === 0 ? (
+
+                                <div className="grafico-sem-dados">
+
+                                    <Users size={28} />
+
+                                    <strong>
+                                        Nenhum agendamento registrado
+                                    </strong>
+
+                                    <span>
+                                        Não existem reservas no período selecionado.
+                                    </span>
+
                                 </div>
+
                             ) : (
-                                dados.turmasAgendamentos.map(
-                                    (turma) => (
-                                        <div
-                                            className="dado-item"
-                                            key={turma.id}
-                                        >
 
-                                            <div className="dado-topo">
+                                <ResponsiveContainer
+                                    width="100%"
+                                    height={320}
+                                >
 
-                                                <span>
-                                                    {turma.nome}
-                                                </span>
+                                    <BarChart
+                                        data={
+                                            graficoTurmasAgendamentos
+                                    }
+                                        layout="vertical"
+                                        margin={{
+                                            top: 5,
+                                            right: 20,
+                                            left: 20,
+                                            bottom: 5
+                                        }}
+                                    >
 
-                                                <strong>
-                                                    {formatarNumero(
-                                                        turma.total_agendamentos
-                                                    )}
-                                                </strong>
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                            horizontal={false}
+                                        />
 
-                                            </div>
+                                        <XAxis
+                                            type="number"
+                                            allowDecimals={false}
+                                        />
 
-                                            <div className="barra-fundo">
+                                        <YAxis
+                                            type="category"
+                                            dataKey="nome"
+                                            width={110}
+                                            tick={{
+                                                fontSize: 12
+                                            }}
+                                        />
 
-                                                <div
-                                                    className="barra-preenchida barra-roxa"
-                                                    style={{
-                                                        width: `${porcentagem(
-                                                            turma.total_agendamentos,
-                                                            maiorTurmaAgendamento
-                                                        )}%`
-                                                    }}
-                                                />
+                                        <Tooltip
+                                            content={
+                                                <TooltipPersonalizado />
+                                            }
+                                        />
 
-                                            </div>
+                                        <Bar
+                                            dataKey="total"
+                                            name="Agendamentos"
+                                            fill="#8b5cf6"
+                                            radius={[
+                                                0,
+                                                6,
+                                                6,
+                                                0
+                                            ]}
+                                            barSize={24}
+                                        />
 
-                                        </div>
-                                    )
-                                )
+                                    </BarChart>
+
+                                </ResponsiveContainer>
+
                             )}
 
                         </div>
 
                     </article>
 
-                    {/* TURMAS EMPRÉSTIMOS */}
 
-                    <article className="relatorio-card">
+                    {/* =================================================
+                        EMPRÉSTIMOS POR TURMA
+                    ================================================== */}
+
+                    <article className="relatorio-card grafico-card">
 
                         <div className="card-cabecalho">
 
                             <div>
+
                                 <h3>
                                     Empréstimos por turma
                                 </h3>
@@ -1064,57 +1800,94 @@ function Relatorios() {
                                 <p>
                                     Quantidade de Chromebooks retirados por turma.
                                 </p>
+
                             </div>
 
                             <Monitor size={20} />
 
                         </div>
 
-                        <div className="dados-lista">
 
-                            {dados.turmasEmprestimos.length === 0 ? (
-                                <div className="relatorio-vazio">
-                                    Nenhum dado encontrado.
+                        <div className="grafico-container grafico-horizontal">
+
+                            {graficoTurmasEmprestimos.length === 0 ? (
+
+                                <div className="grafico-sem-dados">
+
+                                    <Monitor size={28} />
+
+                                    <strong>
+                                        Nenhum empréstimo registrado
+                                    </strong>
+
+                                    <span>
+                                        Não existem empréstimos no período selecionado.
+                                    </span>
+
                                 </div>
+
                             ) : (
-                                dados.turmasEmprestimos.map(
-                                    (turma) => (
-                                        <div
-                                            className="dado-item"
-                                            key={turma.id}
-                                        >
 
-                                            <div className="dado-topo">
+                                <ResponsiveContainer
+                                    width="100%"
+                                    height={320}
+                                >
 
-                                                <span>
-                                                    {turma.nome}
-                                                </span>
+                                    <BarChart
+                                        data={
+                                            graficoTurmasEmprestimos
+                                        }
+                                        layout="vertical"
+                                        margin={{
+                                            top: 5,
+                                            right: 20,
+                                            left: 20,
+                                            bottom: 5
+                                        }}
+                                    >
 
-                                                <strong>
-                                                    {formatarNumero(
-                                                        turma.total_chromebooks
-                                                    )}
-                                                </strong>
+                                        <CartesianGrid
+                                            strokeDasharray="3 3"
+                                            horizontal={false}
+                                        />
 
-                                            </div>
+                                        <XAxis
+                                            type="number"
+                                            allowDecimals={false}
+                                        />
 
-                                            <div className="barra-fundo">
+                                        <YAxis
+                                            type="category"
+                                            dataKey="nome"
+                                            width={110}
+                                            tick={{
+                                                fontSize: 12
+                                            }}
+                                        />
 
-                                                <div
-                                                    className="barra-preenchida barra-laranja"
-                                                    style={{
-                                                        width: `${porcentagem(
-                                                            turma.total_chromebooks,
-                                                            maiorTurmaEmprestimo
-                                                        )}%`
-                                                    }}
-                                                />
+                                        <Tooltip
+                                            content={
+                                                <TooltipPersonalizado />
+                                            }
+                                        />
 
-                                            </div>
+                                        <Bar
+                                            dataKey="total"
+                                            name="Chromebooks"
+                                            fill="#f97316"
+                                            radius={[
+                                                0,
+                                                6,
+                                                6,
+                                                0
+                                            ]}
+                                            barSize={24}
+                                        />
 
-                                        </div>
-                                    )
-                                )
+                                    </BarChart>
+
+                                </ResponsiveContainer>
+
                             )}
 
                         </div>
@@ -1126,7 +1899,10 @@ function Relatorios() {
             </section>
 
         </main>
+
     );
+
 }
+
 
 export default Relatorios;
