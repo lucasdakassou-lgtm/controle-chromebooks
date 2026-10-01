@@ -1,7 +1,10 @@
 import axios from "axios"
 
 const api = axios.create({
-  baseURL: "http://localhost:3000"
+    baseURL: "https://sistemaproati.onrender.com"
 })
+
+console.log("[API] Axios configurado.")
+console.log("[API] Base URL:", api.defaults.baseURL)
 
 export default api
